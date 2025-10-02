@@ -1,0 +1,16 @@
+{
+  "name": "borovy",
+  "version": "1.0.0",
+  "description": "Platform for work organization",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "start:backend": "cd backend && npm start",
+    "migrate": "cd backend && npm run migrate",
+    "seed": "cd backend && npm run seed",
+    "install:backend": "cd backend && npm install",
+    "setup": "npm run install:backend && npm run migrate && npm run seed"
+  },
+  "keywords": ["work", "organization", "platform"],
+  "author": "Borovy Team",
+  "license": "MIT"
+}
