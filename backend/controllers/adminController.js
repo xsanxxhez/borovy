@@ -220,6 +220,70 @@ const getAdminStats = async (req, res) => {
   }
 };
 
+// Admin-specific: Get all data for dashboard
+const getAdminDashboard = async (req, res) => {
+  try {
+    const [stats, slons, promocodes, borovs, vakhtas] = await Promise.all([
+      pool.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM slons WHERE is_active = true) as slons_count,
+          (SELECT COUNT(*) FROM borovs) as borovs_count,
+          (SELECT COUNT(*) FROM vakhtas) as vakhtas_count,
+          (SELECT COUNT(*) FROM vakhtas WHERE is_active = true) as active_vakhtas_count,
+          (SELECT COUNT(*) FROM promo_codes WHERE is_active = true) as promocodes_count
+      `),
+      pool.query(`
+        SELECT s.*, 
+               COUNT(DISTINCT pc.id) as promo_codes_count,
+               COUNT(DISTINCT b.id) as borovs_count
+        FROM slons s
+        LEFT JOIN promo_codes pc ON s.id = pc.slon_id
+        LEFT JOIN borovs b ON pc.id = b.promo_code_id
+        GROUP BY s.id
+        ORDER BY s.created_at DESC
+        LIMIT 10
+      `),
+      pool.query(`
+        SELECT pc.*, s.display_name as slon_name, 
+               COUNT(b.id) as borovs_count
+        FROM promo_codes pc
+        LEFT JOIN slons s ON pc.slon_id = s.id
+        LEFT JOIN borovs b ON pc.id = b.promo_code_id
+        GROUP BY pc.id, s.display_name
+        ORDER BY pc.created_at DESC
+        LIMIT 10
+      `),
+      pool.query(`
+        SELECT b.*, pc.code as promo_code, s.display_name as slon_name
+        FROM borovs b
+        LEFT JOIN promo_codes pc ON b.promo_code_id = pc.id
+        LEFT JOIN slons s ON pc.slon_id = s.id
+        ORDER BY b.created_at DESC
+        LIMIT 10
+      `),
+      pool.query(`
+        SELECT *, 
+               (SELECT COUNT(*) FROM borov_vakhta_history 
+                WHERE vakhta_id = vakhtas.id AND status = 'active') as current_workers
+        FROM vakhtas 
+        ORDER BY created_at DESC
+        LIMIT 10
+      `)
+    ]);
+
+    res.json({
+      stats: stats.rows[0],
+      slons: slons.rows,
+      promocodes: promocodes.rows,
+      borovs: borovs.rows,
+      vakhtas: vakhtas.rows
+    });
+  } catch (error) {
+    console.error('Get admin dashboard error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   getAllSlons,
   createSlon,
@@ -229,5 +293,6 @@ module.exports = {
   getAllVakhtas,
   createVakhta,
   updateVakhta,
-  getAdminStats
+  getAdminStats,
+  getAdminDashboard
 };

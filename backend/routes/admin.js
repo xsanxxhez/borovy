@@ -1,22 +1,34 @@
 const express = require('express');
-const { 
-  getAllSlons, 
-  createSlon, 
+const {
+  getAllSlons,
+  createSlon,
   updateSlon,
   getAllPromoCodes,
   getAllBorovs,
   getAllVakhtas,
   createVakhta,
   updateVakhta,
-  getAdminStats
+  getAdminStats,
+  getAdminDashboard
 } = require('../controllers/adminController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validateSlon, validateVakhta } = require('../middleware/validation');
 
 const router = express.Router();
 
+// Используем authenticate для всех роутов
 router.use(authenticate);
-router.use(requireRole(['admin']));
+
+// Специальная проверка для админа - только пользователь с username 'admin'
+const requireAdmin = (req, res, next) => {
+  if (req.user.username === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: 'Admin access required' });
+  }
+};
+
+router.use(requireAdmin);
 
 // Slon management
 router.get('/slons', getAllSlons);
@@ -36,5 +48,8 @@ router.put('/vakhtas/:id', validateVakhta, updateVakhta);
 
 // Statistics
 router.get('/stats', getAdminStats);
+
+// Dashboard - все данные для админской панели
+router.get('/dashboard', getAdminDashboard);
 
 module.exports = router;

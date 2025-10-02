@@ -74,19 +74,29 @@ const handleLogin = async () => {
       body: form
     })
 
+    // Добавим логирование для отладки
+    console.log('Login response:', response)
+    console.log('User role:', response.user.role)
+    console.log('User data:', response.user)
+
     authStore.setAuth(response.token, response.user)
 
+    // Проверим что роль правильно определяется
     switch (response.user.role) {
       case 'admin':
+        console.log('Redirecting to admin')
         await router.push('/admin')
         break
       case 'slon':
+        console.log('Redirecting to slon')
         await router.push('/slon')
         break
       case 'borov':
+        console.log('Redirecting to borov')
         await router.push('/borov')
         break
       default:
+        console.log('Unknown role, redirecting to home')
         await router.push('/')
     }
   } catch (err: any) {

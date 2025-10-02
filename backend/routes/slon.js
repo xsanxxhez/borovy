@@ -1,9 +1,9 @@
 const express = require('express');
-const { 
-  getMyPromoCodes, 
-  createPromoCode, 
+const {
+  getMyPromoCodes,
+  createPromoCode,
   getMyBorovs,
-  getSlonStats 
+  getSlonStats
 } = require('../controllers/slonController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validatePromoCode } = require('../middleware/validation');
@@ -11,7 +11,17 @@ const { validatePromoCode } = require('../middleware/validation');
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireRole(['slon']));
+
+// Специальная проверка для слонов - не админ и роль slon
+const requireSlon = (req, res, next) => {
+  if (req.user.role === 'slon' && req.user.username !== 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: 'Slon access required' });
+  }
+};
+
+router.use(requireSlon);
 
 // Promo codes
 router.get('/promocodes', getMyPromoCodes);
