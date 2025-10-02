@@ -1,5 +1,5 @@
 const { pool } = require('../config/database');
-const { hashPassword } = require('../utils/passwordHash');
+const { hashPassword, comparePassword } = require('../utils/passwordHash');
 
 const register = async (req, res) => {
   try {
@@ -32,8 +32,8 @@ const register = async (req, res) => {
 
     // Create borov
     const borovResult = await pool.query(
-      `INSERT INTO borovs (email, phone, password_hash, full_name, birth_date, promo_code_id) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO borovs (email, phone, password_hash, full_name, birth_date, promo_code_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, email, phone, full_name, birth_date, created_at`,
       [email, phone, hashedPassword, full_name, birth_date, promoCodeId]
     );
@@ -60,19 +60,19 @@ const register = async (req, res) => {
 const getAvailableVakhtas = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT *, 
-             (SELECT COUNT(*) FROM borov_vakhta_history 
+      SELECT *,
+             (SELECT COUNT(*) FROM borov_vakhta_history
               WHERE vakhta_id = vakhtas.id AND status = 'active') as current_workers,
-             total_places - (SELECT COUNT(*) FROM borov_vakhta_history 
+             total_places - (SELECT COUNT(*) FROM borov_vakhta_history
                            WHERE vakhta_id = vakhtas.id AND status = 'active') as free_places
-      FROM vakhtas 
-      WHERE is_active = true 
+      FROM vakhtas
+      WHERE is_active = true
         AND start_date > NOW()
-        AND total_places > (SELECT COUNT(*) FROM borov_vakhta_history 
+        AND total_places > (SELECT COUNT(*) FROM borov_vakhta_history
                           WHERE vakhta_id = vakhtas.id AND status = 'active')
       ORDER BY start_date ASC
     `);
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get available vakhtas error:', error);
@@ -87,10 +87,10 @@ const joinVakhta = async (req, res) => {
 
     // Check if vakhta exists and has free places
     const vakhtaResult = await pool.query(`
-      SELECT *, 
-             (SELECT COUNT(*) FROM borov_vakhta_history 
+      SELECT *,
+             (SELECT COUNT(*) FROM borov_vakhta_history
               WHERE vakhta_id = $1 AND status = 'active') as current_workers
-      FROM vakhtas 
+      FROM vakhtas
       WHERE id = $1 AND is_active = true
     `, [vakhta_id]);
 
@@ -115,7 +115,7 @@ const joinVakhta = async (req, res) => {
 
     // Join vakhta
     await pool.query(
-      `INSERT INTO borov_vakhta_history (borov_id, vakhta_id, start_date, status) 
+      `INSERT INTO borov_vakhta_history (borov_id, vakhta_id, start_date, status)
        VALUES ($1, $2, $3, 'active')`,
       [borov_id, vakhta_id, vakhta.start_date]
     );
@@ -142,7 +142,7 @@ const getMyVakhtas = async (req, res) => {
       WHERE bvh.borov_id = $1
       ORDER BY bvh.created_at DESC
     `, [req.user.id]);
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get my vakhtas error:', error);
@@ -170,10 +170,48 @@ const getBorovStats = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    const borov_id = req.user.id;
+
+    // Получаем текущий хэш пароля
+    const borovResult = await pool.query(
+      'SELECT password_hash FROM borovs WHERE id = $1',
+      [borov_id]
+    );
+
+    if (borovResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Borov not found' });
+    }
+
+    // Проверяем текущий пароль
+    const isValidPassword = await comparePassword(current_password, borovResult.rows[0].password_hash);
+    if (!isValidPassword) {
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+
+    // Хэшируем новый пароль
+    const hashedPassword = await hashPassword(new_password);
+
+    // Обновляем пароль
+    await pool.query(
+      'UPDATE borovs SET password_hash = $1 WHERE id = $2',
+      [hashedPassword, borov_id]
+    );
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   register,
   getAvailableVakhtas,
   joinVakhta,
   getMyVakhtas,
-  getBorovStats
+  getBorovStats,
+  changePassword
 };

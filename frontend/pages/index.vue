@@ -1,93 +1,103 @@
 <template>
-  <div class="container">
-    <div class="welcome-card">
-      <h1>Добро пожаловать в Borovy!</h1>
-      <p class="subtitle">Платформа для организации вахтовой работы</p>
-      
-      <div v-if="!authStore.isAuthenticated" class="auth-section">
-        <NuxtLink to="/login" class="btn btn-primary btn-large">
-          Войти в систему
-        </NuxtLink>
-        
-        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-          <h3 style="color: #333; margin-bottom: 15px;">Роли в системе:</h3>
-          <div style="display: grid; gap: 15px;">
-            <div style="display: flex; align-items: start; gap: 10px;">
-              <span style="background: #dc3545; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px;">👑 АДМИН</span>
-              <div>
-                <strong>Создает слонов</strong><br>
-                <small>Управляет всей системой, создает аккаунты для слонов и вахты</small>
-              </div>
+  <div class="home-page">
+    <!-- Герой секция -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">Borovy</h1>
+        <p class="hero-subtitle">Платформа для организации вахтовой работы</p>
+        <p class="hero-description">
+          Эффективная система управления вахтовым методом работы с трехступенчатой системой доступа
+        </p>
+
+        <!-- Кнопки авторизации -->
+        <div class="auth-buttons" v-if="!authStore.isAuthenticated">
+          <nuxt-link to="/login" class="btn btn-primary">
+            <span>Войти в систему</span>
+          </nuxt-link>
+          <nuxt-link to="/register" class="btn btn-outline">
+            <span>Регистрация Борова</span>
+          </nuxt-link>
+        </div>
+
+        <!-- Приветствие для авторизованных -->
+        <div v-else class="user-welcome">
+          <div class="welcome-card">
+            <h2>Добро пожаловать, {{ authStore.user?.display_name }}!</h2>
+            <p>Вы вошли в систему как <strong>{{ getRoleName(authStore.userRole) }}</strong></p>
+            <nuxt-link :to="getDashboardRoute()" class="btn btn-primary btn-large">
+              Перейти в личный кабинет
+            </nuxt-link>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Информация о ролях -->
+    <div class="roles-section" v-if="!authStore.isAuthenticated">
+      <div class="container">
+        <h2 class="section-title">Роли в системе</h2>
+        <div class="roles-grid">
+          <div class="role-card">
+            <div class="role-icon admin">👑</div>
+            <h3>Администратор</h3>
+            <p>Полный контроль над системой: управление слонами, вахтами, промокодами и статистикой</p>
+            <div class="role-features">
+              <span>Управление вахтами</span>
+              <span>Контроль слонов</span>
+              <span>Вся статистика</span>
             </div>
-            <div style="display: flex; align-items: start; gap: 10px;">
-              <span style="background: #fd7e14; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px;">🐘 СЛОН</span>
-              <div>
-                <strong>Создает промокоды</strong><br>
-                <small>Привлекает боровов через промокоды, следит за статистикой</small>
-              </div>
+          </div>
+
+          <div class="role-card">
+            <div class="role-icon slon">🐘</div>
+            <h3>Слон (Менеджер)</h3>
+            <p>Привлечение рабочих через промокоды и отслеживание эффективности привлечения</p>
+            <div class="role-features">
+              <span>Создание промокодов</span>
+              <span>Мои боровы</span>
+              <span>Статистика</span>
             </div>
-            <div style="display: flex; align-items: start; gap: 10px;">
-              <span style="background: #20c997; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px;">💪 БОРОВ</span>
-              <div>
-                <strong>Работает на вахтах</strong><br>
-                <small>Регистрируется по промокоду, записывается на вахты</small>
-              </div>
+          </div>
+
+          <div class="role-card">
+            <div class="role-icon borov">💪</div>
+            <h3>Боров (Рабочий)</h3>
+            <p>Просмотр доступных вахт, запись на работу и отслеживание своей статистики</p>
+            <div class="role-features">
+              <span>Поиск вахт</span>
+              <span>История работы</span>
+              <span>Личный профиль</span>
             </div>
           </div>
         </div>
       </div>
-      
-      <div v-else class="dashboard-section">
-        <h2>Ваш кабинет</h2>
-        <p>Вы вошли как 
-          <strong>{{ authStore.user?.display_name }}</strong> 
-          <span class="role-badge" :class="authStore.userRole">
-            {{ getRoleName(authStore.userRole) }}
-          </span>
-        </p>
-        
-        <div class="role-actions">
-          <NuxtLink 
-            v-if="authStore.isAdmin" 
-            to="/admin" 
-            class="action-card admin-card"
-          >
-            <h3>👑 Администратор</h3>
-            <p>Управление системой: создание слонов, вахт, просмотр статистики</p>
-            <div class="card-features">
-              <span>✅ Создавать слонов</span>
-              <span>✅ Управлять вахтами</span>
-              <span>✅ Видеть всю статистику</span>
-            </div>
-          </NuxtLink>
-          
-          <NuxtLink 
-            v-if="authStore.isSlon" 
-            to="/slon" 
-            class="action-card slon-card"
-          >
-            <h3>🐘 Слон</h3>
-            <p>Привлечение боровов: создание промокодов, отслеживание эффективности</p>
-            <div class="card-features">
-              <span>✅ Создавать промокоды</span>
-              <span>✅ Смотреть своих боровов</span>
-              <span>✅ Анализировать статистику</span>
-            </div>
-          </NuxtLink>
-          
-          <NuxtLink 
-            v-if="authStore.isBorov" 
-            to="/borov" 
-            class="action-card borov-card"
-          >
-            <h3>💪 Боров</h3>
-            <p>Работа на вахтах: просмотр доступных вахт, запись, история работы</p>
-            <div class="card-features">
-              <span>✅ Смотреть вахты</span>
-              <span>✅ Записываться на работу</span>
-              <span>✅ Видеть историю</span>
-            </div>
-          </NuxtLink>
+    </div>
+
+    <!-- Как это работает -->
+    <div class="how-it-works" v-if="!authStore.isAuthenticated">
+      <div class="container">
+        <h2 class="section-title">Как это работает</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h3>Регистрация</h3>
+            <p>Боров регистрируется по промокоду от Слона</p>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <h3>Выбор вахты</h3>
+            <p>Просмотр доступных вахт и запись на подходящую</p>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <h3>Работа</h3>
+            <p>Выполнение рабочих обязанностей на вахте</p>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <h3>Статистика</h3>
+            <p>Отслеживание прогресса и истории работы</p>
+          </div>
         </div>
       </div>
     </div>
@@ -99,170 +109,302 @@ const authStore = useAuthStore()
 
 const getRoleName = (role: string) => {
   const roles: any = {
-    admin: 'АДМИНИСТРАТОР',
-    slon: 'СЛОН', 
-    borov: 'БОРОВ'
+    admin: 'Администратор',
+    slon: 'Слон',
+    borov: 'Боров'
   }
   return roles[role] || role
 }
 
-definePageMeta({
-  layout: 'default'
-})
+const getDashboardRoute = () => {
+  if (authStore.isAdmin) return '/admin'
+  if (authStore.isSlon) return '/slon'
+  if (authStore.isBorov) return '/borov'
+  return '/'
+}
 </script>
 
 <style scoped>
-.container {
-  max-width: 1000px;
+.home-page {
+  min-height: 100vh;
+}
+
+/* Герой секция */
+.hero-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.hero-content {
+  max-width: 800px;
   margin: 0 auto;
-  padding: 0 20px;
 }
 
-.welcome-card {
+.hero-title {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.9;
+}
+
+.hero-description {
+  font-size: 1.1rem;
+  margin-bottom: 3rem;
+  opacity: 0.8;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 15px 30px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  min-width: 200px;
+}
+
+.btn-primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: white;
+  border: 2px solid white;
+}
+
+.btn-outline:hover {
   background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-}
-
-h1 {
-  color: #333;
-  margin-bottom: 10px;
-  font-size: 2.5em;
-  text-align: center;
-}
-
-.subtitle {
-  color: #666;
-  font-size: 1.2em;
-  margin-bottom: 40px;
-  text-align: center;
-}
-
-.auth-section {
-  margin-top: 30px;
+  color: #667eea;
+  transform: translateY(-2px);
 }
 
 .btn-large {
-  padding: 15px 30px;
-  font-size: 1.1em;
-  display: block;
-  width: 200px;
-  margin: 0 auto;
+  padding: 18px 40px;
+  font-size: 18px;
 }
 
-.dashboard-section h2 {
-  color: #333;
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-.dashboard-section p {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.role-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: bold;
-  text-transform: uppercase;
-  margin-left: 10px;
-}
-
-.role-badge.admin {
-  background: #dc3545;
-  color: white;
-}
-
-.role-badge.slon {
-  background: #fd7e14;
-  color: white;
-}
-
-.role-badge.borov {
-  background: #20c997;
-  color: white;
-}
-
-.role-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 25px;
+/* Приветствие пользователя */
+.user-welcome {
   margin-top: 30px;
 }
 
-.action-card {
+.welcome-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.welcome-card h2 {
+  margin-bottom: 15px;
+  font-size: 2rem;
+}
+
+.welcome-card p {
+  margin-bottom: 25px;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+/* Секция ролей */
+.roles-section {
+  padding: 80px 20px;
   background: #f8f9fa;
-  padding: 25px;
-  border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
 }
 
-.action-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.admin-card::before {
-  background: #dc3545;
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #333;
 }
 
-.slon-card::before {
-  background: #fd7e14;
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
 }
 
-.borov-card::before {
-  background: #20c997;
+.role-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.action-card:hover {
+.role-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
-.admin-card:hover {
-  border-color: #dc3545;
+.role-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  display: block;
 }
 
-.slon-card:hover {
-  border-color: #fd7e14;
-}
-
-.borov-card:hover {
-  border-color: #20c997;
-}
-
-.action-card h3 {
-  color: #333;
-  margin-bottom: 10px;
-  font-size: 1.3em;
-}
-
-.action-card p {
-  color: #666;
+.role-card h3 {
+  font-size: 1.5rem;
   margin-bottom: 15px;
-  text-align: left;
+  color: #333;
 }
 
-.card-features {
+.role-card p {
+  color: #666;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+.role-features {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
 }
 
-.card-features span {
-  font-size: 0.9em;
+.role-features span {
+  background: #f8f9fa;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 14px;
   color: #555;
+}
+
+/* Секция "Как это работает" */
+.how-it-works {
+  padding: 80px 20px;
+  background: white;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 40px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.step {
+  text-align: center;
+  padding: 30px;
+}
+
+.step-number {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0 auto 20px;
+}
+
+.step h3 {
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.step p {
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.3rem;
+  }
+
+  .auth-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .roles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-card {
+    padding: 30px 20px;
+  }
+
+  .welcome-card h2 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    padding: 60px 20px;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .role-card {
+    padding: 30px 20px;
+  }
 }
 </style>

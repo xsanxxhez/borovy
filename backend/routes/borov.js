@@ -1,10 +1,11 @@
 const express = require('express');
-const { 
+const {
   register,
-  getAvailableVakhtas, 
-  joinVakhta, 
+  getAvailableVakhtas,
+  joinVakhta,
   getMyVakhtas,
-  getBorovStats 
+  getBorovStats,
+  changePassword
 } = require('../controllers/borovController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validateBorov } = require('../middleware/validation');
@@ -25,5 +26,8 @@ router.get('/vakhtas/my', getMyVakhtas);
 
 // Statistics
 router.get('/stats', getBorovStats);
+
+// Password
+router.post('/change-password', changePassword);
 
 module.exports = router;

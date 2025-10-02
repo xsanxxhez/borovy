@@ -4,8 +4,37 @@
     <nav v-if="authStore.isAuthenticated" class="navbar">
       <div class="nav-container">
         <div class="nav-brand">
-          <h2>Borovy</h2>
+          <nuxt-link to="/">
+            <h2>Borovy</h2>
+          </nuxt-link>
         </div>
+
+        <div class="nav-links">
+          <!-- Навигация для Админа -->
+          <template v-if="authStore.isAdmin">
+            <nuxt-link to="/admin" class="nav-link">Дашборд</nuxt-link>
+            <nuxt-link to="/admin/slons" class="nav-link">Слоны</nuxt-link>
+            <nuxt-link to="/admin/vakhtas" class="nav-link">Вахты</nuxt-link>
+            <nuxt-link to="/admin/promocodes" class="nav-link">Промокоды</nuxt-link>
+            <nuxt-link to="/admin/borovs" class="nav-link">Боровы</nuxt-link>
+          </template>
+
+          <!-- Навигация для Слона -->
+          <template v-else-if="authStore.isSlon">
+            <nuxt-link to="/slon" class="nav-link">Дашборд</nuxt-link>
+            <nuxt-link to="/slon/promocodes" class="nav-link">Промокоды</nuxt-link>
+            <nuxt-link to="/slon/borovs" class="nav-link">Боровы</nuxt-link>
+          </template>
+
+          <!-- Навигация для Борова -->
+          <template v-else-if="authStore.isBorov">
+            <nuxt-link to="/borov" class="nav-link">Главная</nuxt-link>
+            <nuxt-link to="/borov/vakhtas" class="nav-link">Вахты</nuxt-link>
+            <nuxt-link to="/borov/history" class="nav-link">История</nuxt-link>
+            <nuxt-link to="/borov/profile" class="nav-link">Профиль</nuxt-link>
+          </template>
+        </div>
+
         <div class="nav-user">
           <span>Привет, {{ authStore.user?.display_name }}!</span>
           <span class="role-badge" :class="authStore.userRole">
@@ -66,6 +95,34 @@ const handleLogout = () => {
   color: #333;
 }
 
+.nav-brand a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background: #f8f9fa;
+}
+
+.nav-link.router-link-active {
+  background: #007bff;
+  color: white;
+}
+
 .nav-user {
   display: flex;
   align-items: center;
@@ -102,6 +159,7 @@ const handleLogout = () => {
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .btn-outline:hover {

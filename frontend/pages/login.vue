@@ -4,12 +4,12 @@
       <h1 class="login-title">Borovy</h1>
       <form @submit.prevent="handleLogin">
         <div class="form-group">
-          <label class="form-label">Имя пользователя</label>
+          <label class="form-label">Имя пользователя или Email</label>
           <input
             v-model="form.username"
             type="text"
             class="form-input"
-            placeholder="Введите имя пользователя"
+            placeholder="Введите имя пользователя или email"
             required
           >
         </div>
@@ -36,12 +36,17 @@
         >
           {{ loading ? 'Вход...' : 'Войти' }}
         </button>
+
+        <div class="register-link">
+          Нет аккаунта? <nuxt-link to="/register">Зарегистрируйтесь как Боров</nuxt-link>
+        </div>
       </form>
 
       <div class="test-credentials">
         <h4>Тестовые данные:</h4>
         <p><strong>Админ:</strong> admin / admin123</p>
         <p><strong>Слон:</strong> slon1 / slon123</p>
+        <p><small>Для Борова - сначала регистрация через промокод</small></p>
       </div>
     </div>
   </div>
@@ -115,6 +120,7 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
 }
 
 .login-card {
@@ -141,6 +147,7 @@ const handleLogin = async () => {
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
+  color: #333;
 }
 
 .form-input {
@@ -149,6 +156,12 @@ const handleLogin = async () => {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #007bff;
+  outline: none;
 }
 
 .btn {
@@ -158,6 +171,7 @@ const handleLogin = async () => {
   cursor: pointer;
   font-size: 14px;
   width: 100%;
+  margin-top: 10px;
 }
 
 .btn-primary {
@@ -165,7 +179,7 @@ const handleLogin = async () => {
   color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: #0056b3;
 }
 
@@ -176,27 +190,50 @@ const handleLogin = async () => {
 
 .error-message {
   color: #dc3545;
-  margin-bottom: 15px;
+  margin: 15px 0;
   padding: 10px;
   background: #f8d7da;
   border-radius: 4px;
   border: 1px solid #f5c6cb;
 }
 
-.test-credentials {
+.register-link {
+  text-align: center;
   margin-top: 20px;
-  padding: 15px;
+  color: #666;
+}
+
+.register-link a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+.test-credentials {
+  margin-top: 30px;
+  padding: 20px;
   background: #f8f9fa;
-  border-radius: 5px;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
 }
 
 .test-credentials h4 {
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   color: #333;
+  font-size: 16px;
 }
 
 .test-credentials p {
-  margin: 5px 0;
-  color: #666;
+  margin: 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.test-credentials small {
+  color: #6c757d;
+  font-style: italic;
 }
 </style>
