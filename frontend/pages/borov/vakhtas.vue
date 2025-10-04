@@ -1,3 +1,4 @@
+<!-- pages/borov/vakhtas.vue - исправленная версия -->
 <template>
   <div class="vakhtas-page">
     <div class="page-header">
@@ -15,14 +16,6 @@
           placeholder="Название вахты или местоположение..."
           class="filter-input"
         >
-      </div>
-      <div class="filter-group">
-        <label>Сортировка:</label>
-        <select v-model="sortBy" class="filter-select">
-          <option value="start_date">По дате начала</option>
-          <option value="title">По названию</option>
-          <option value="location">По местоположению</option>
-        </select>
       </div>
     </div>
 
@@ -54,7 +47,7 @@
         <div class="vakhta-details">
           <p class="location">📍 {{ vakhta.location }}</p>
           <p class="dates">📅 {{ formatDate(vakhta.start_date) }} - {{ formatDate(vakhta.end_date) }}</p>
-          <p class="places">👥 {{ vakhta.current_workers }}/{{ vakhta.total_places }} занято</p>
+          <p class="places">👥 {{ vakhta.current_workers || 0 }}/{{ vakhta.total_places }} занято</p>
 
           <div v-if="vakhta.requirements" class="requirements">
             <strong>Требования:</strong> {{ vakhta.requirements }}
@@ -100,7 +93,6 @@ const vakhtas = ref([])
 const loading = ref(false)
 const joiningVakhta = ref(null)
 const searchQuery = ref('')
-const sortBy = ref('start_date')
 const message = ref('')
 const messageType = ref('success')
 const hasActiveVakhta = ref(false)
@@ -109,7 +101,7 @@ const hasActiveVakhta = ref(false)
 const loadVakhtas = async () => {
   try {
     loading.value = true
-    const response = await $fetch('http://localhost:3001/api/borov/vakhtas/available', {
+    const response = await $fetch('http://localhost:3001/api/vakhta', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -167,14 +159,6 @@ const filteredVakhtas = computed(() => {
     )
   }
 
-  // Сортировка
-  filtered.sort((a: any, b: any) => {
-    if (sortBy.value === 'start_date') {
-      return new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
-    }
-    return a[sortBy.value].localeCompare(b[sortBy.value])
-  })
-
   return filtered
 })
 
@@ -194,190 +178,3 @@ onMounted(() => {
   loadVakhtas()
 })
 </script>
-
-<style scoped>
-.vakhtas-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.page-header {
-  margin-bottom: 30px;
-}
-
-.page-header h1 {
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.page-header p {
-  color: #666;
-  font-size: 18px;
-}
-
-.filters-section {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.filter-group label {
-  font-weight: 500;
-  color: #333;
-}
-
-.filter-input, .filter-select {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  min-width: 200px;
-}
-
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-}
-
-.no-vakhtas {
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-}
-
-.no-vakhtas-icon {
-  font-size: 60px;
-  margin-bottom: 20px;
-}
-
-.vakhtas-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 25px;
-}
-
-.vakhta-card {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 25px;
-  border-left: 4px solid #20c997;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.vakhta-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-
-.vakhta-card.full {
-  border-left-color: #dc3545;
-  opacity: 0.7;
-}
-
-.vakhta-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 15px;
-}
-
-.vakhta-header h3 {
-  margin: 0;
-  color: #333;
-  flex: 1;
-}
-
-.places-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  background: #20c997;
-  color: white;
-}
-
-.places-badge.few {
-  background: #fd7e14;
-}
-
-.places-badge.full {
-  background: #dc3545;
-}
-
-.vakhta-details {
-  margin-bottom: 20px;
-}
-
-.vakhta-details p {
-  margin: 8px 0;
-  color: #555;
-}
-
-.requirements, .conditions {
-  margin: 10px 0;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 5px;
-  font-size: 14px;
-}
-
-.vakhta-actions {
-  text-align: center;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 500;
-  width: 100%;
-}
-
-.btn-primary {
-  background: #007bff;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.btn-primary:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-}
-
-.btn-disabled {
-  background: #e9ecef;
-  color: #6c757d;
-  cursor: not-allowed;
-}
-
-.message {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 15px 20px;
-  border-radius: 5px;
-  color: white;
-  z-index: 1000;
-}
-
-.message.success {
-  background: #28a745;
-}
-
-.message.error {
-  background: #dc3545;
-}
-</style>

@@ -119,16 +119,17 @@ const getAllBorovs = async (req, res) => {
 };
 
 // Vakhtas management
+// В функции getAllVakhtas исправляем SQL запрос
 const getAllVakhtas = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT *, 
-             (SELECT COUNT(*) FROM borov_vakhta_history 
-              WHERE vakhta_id = vakhtas.id AND status = 'active') as current_workers
-      FROM vakhtas 
+      SELECT *,
+             (SELECT COUNT(*) FROM borov_vakhta_history
+              WHERE vacancy_id = vakhtas.id AND status = 'active') as current_workers
+      FROM vakhtas
       ORDER BY created_at DESC
     `);
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get all vakhtas error:', error);
@@ -140,11 +141,34 @@ const createVakhta = async (req, res) => {
   try {
     const { title, description, location, total_places, start_date, end_date, requirements, conditions } = req.body;
 
+    // Валидация обязательных полей
+    if (!title || !location || !total_places || !start_date || !end_date) {
+      return res.status(400).json({
+        error: 'Missing required fields: title, location, total_places, start_date, end_date'
+      });
+    }
+
+    // Преобразование дат в правильный формат
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    if (startDate <= new Date()) {
+      return res.status(400).json({ error: 'Start date must be in the future' });
+    }
+
+    if (endDate <= startDate) {
+      return res.status(400).json({ error: 'End date must be after start date' });
+    }
+
     const result = await pool.query(
-      `INSERT INTO vakhtas (title, description, location, total_places, start_date, end_date, requirements, conditions) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+      `INSERT INTO vakhtas (title, description, location, total_places, start_date, end_date, requirements, conditions)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [title, description, location, total_places, start_date, end_date, requirements, conditions]
+      [title, description, location, parseInt(total_places), startDate, endDate, requirements, conditions]
     );
 
     res.status(201).json(result.rows[0]);

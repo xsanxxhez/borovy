@@ -10,14 +10,9 @@
         </div>
 
         <div class="nav-links">
-          <!-- Навигация для Админа -->
-          <template v-if="authStore.isAdmin">
-            <nuxt-link to="/admin" class="nav-link">Дашборд</nuxt-link>
-            <nuxt-link to="/admin/slons" class="nav-link">Слоны</nuxt-link>
-            <nuxt-link to="/admin/vakhtas" class="nav-link">Вахты</nuxt-link>
-            <nuxt-link to="/admin/promocodes" class="nav-link">Промокоды</nuxt-link>
-            <nuxt-link to="/admin/borovs" class="nav-link">Боровы</nuxt-link>
-          </template>
+         <template v-if="authStore.isAdmin">
+           <nuxt-link to="/admin" class="nav-link">Панель управления</nuxt-link>
+         </template>
 
           <!-- Навигация для Слона -->
           <template v-else-if="authStore.isSlon">

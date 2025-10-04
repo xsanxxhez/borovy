@@ -57,6 +57,7 @@ const register = async (req, res) => {
   }
 };
 
+// В borovController.js - исправленная функция getAvailableVakhtas
 const getAvailableVakhtas = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -73,13 +74,18 @@ const getAvailableVakhtas = async (req, res) => {
       ORDER BY start_date ASC
     `);
 
-    res.json(result.rows);
+    // Добавляем проверку на отрицательные значения free_places
+    const vakhtas = result.rows.map(vakhta => ({
+      ...vakhta,
+      free_places: Math.max(0, vakhta.free_places)
+    }));
+
+    res.json(vakhtas);
   } catch (error) {
     console.error('Get available vakhtas error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 const joinVakhta = async (req, res) => {
   try {
     const { vakhta_id } = req.body;
@@ -89,7 +95,7 @@ const joinVakhta = async (req, res) => {
     const vakhtaResult = await pool.query(`
       SELECT *,
              (SELECT COUNT(*) FROM borov_vakhta_history
-              WHERE vakhta_id = $1 AND status = 'active') as current_workers
+              WHERE vacancy_id = $1 AND status = 'active') as current_workers
       FROM vakhtas
       WHERE id = $1 AND is_active = true
     `, [vakhta_id]);
@@ -115,7 +121,7 @@ const joinVakhta = async (req, res) => {
 
     // Join vakhta
     await pool.query(
-      `INSERT INTO borov_vakhta_history (borov_id, vakhta_id, start_date, status)
+      `INSERT INTO borov_vakhta_history (borov_id, vacancy_id, start_date, status)
        VALUES ($1, $2, $3, 'active')`,
       [borov_id, vakhta_id, vakhta.start_date]
     );
@@ -214,4 +220,5 @@ module.exports = {
   getMyVakhtas,
   getBorovStats,
   changePassword
+
 };

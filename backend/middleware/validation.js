@@ -28,14 +28,31 @@ const validatePromoCode = (req, res, next) => {
   next();
 };
 
+// В validation.js - улучшенная валидация для вахт
 const validateVakhta = (req, res, next) => {
   const schema = Joi.object({
-    title: Joi.string().min(5).max(200).required(),
+    title: Joi.string().min(5).max(200).required().messages({
+      'string.min': 'Название вахты должно содержать минимум 5 символов',
+      'string.max': 'Название вахты не должно превышать 200 символов',
+      'any.required': 'Название вахты обязательно'
+    }),
     description: Joi.string().allow('').optional(),
-    location: Joi.string().min(3).max(200).required(),
-    total_places: Joi.number().integer().min(1).max(1000).required(),
-    start_date: Joi.date().greater('now').required(),
-    end_date: Joi.date().greater(Joi.ref('start_date')).required(),
+    location: Joi.string().min(3).max(200).required().messages({
+      'any.required': 'Местоположение обязательно'
+    }),
+    total_places: Joi.number().integer().min(1).max(1000).required().messages({
+      'number.min': 'Количество мест должно быть не менее 1',
+      'number.max': 'Количество мест не должно превышать 1000',
+      'any.required': 'Количество мест обязательно'
+    }),
+    start_date: Joi.date().greater('now').required().messages({
+      'date.greater': 'Дата начала должна быть в будущем',
+      'any.required': 'Дата начала обязательна'
+    }),
+    end_date: Joi.date().greater(Joi.ref('start_date')).required().messages({
+      'date.greater': 'Дата окончания должна быть после даты начала',
+      'any.required': 'Дата окончания обязательна'
+    }),
     requirements: Joi.string().allow('').optional(),
     conditions: Joi.string().allow('').optional()
   });
@@ -46,7 +63,6 @@ const validateVakhta = (req, res, next) => {
   }
   next();
 };
-
 const validateBorov = (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string().email().required(),

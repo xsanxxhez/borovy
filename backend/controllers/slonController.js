@@ -48,21 +48,22 @@ const createPromoCode = async (req, res) => {
 };
 
 // Borovs management for slon
+// В функции getMyBorovs исправляем SQL запрос
 const getMyBorovs = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT b.*, pc.code as promo_code,
              bs.total_vakhtas_completed, bs.total_work_days,
              v.title as current_vakhta,
-             CASE WHEN bs.current_vakhta_id IS NOT NULL THEN true ELSE false END as is_active
+             CASE WHEN COALESCE(bs.current_vakhta_id, bs.current_vacancy_id) IS NOT NULL THEN true ELSE false END as is_active
       FROM borovs b
       LEFT JOIN promo_codes pc ON b.promo_code_id = pc.id
       LEFT JOIN borov_stats bs ON b.id = bs.borov_id
-      LEFT JOIN vakhtas v ON bs.current_vakhta_id = v.id
+      LEFT JOIN vakhtas v ON COALESCE(bs.current_vakhta_id, bs.current_vacancy_id) = v.id
       WHERE pc.slon_id = $1
       ORDER BY b.created_at DESC
     `, [req.user.id]);
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get my borovs error:', error);

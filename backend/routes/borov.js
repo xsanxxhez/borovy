@@ -1,3 +1,4 @@
+// routes/borov.js
 const express = require('express');
 const {
   register,
@@ -21,7 +22,7 @@ router.use(requireRole(['borov']));
 
 // Vakhtas
 router.get('/vakhtas/available', getAvailableVakhtas);
-router.post('/vakhtas/join', joinVakhta);
+router.post('/vakhtas/join', joinVakhta);  // ← Строка 16 с ошибкой
 router.get('/vakhtas/my', getMyVakhtas);
 
 // Statistics

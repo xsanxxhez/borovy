@@ -106,6 +106,16 @@ const createTables = async () => {
     console.log('✅ borov_stats table created');
 
     console.log('🎉 All tables created successfully!');
+    // В migrate.js - добавьте после создания таблиц
+    // Add indexes for better performance
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_vakhtas_active ON vakhtas (is_active, start_date) WHERE is_active = true;
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_borov_vakhta_active ON borov_vakhta_history (status, vakhta_id) WHERE status = 'active';
+    `);
+    console.log('✅ Performance indexes created');
+
 
   } catch (error) {
     console.error('❌ Migration failed:', error);
@@ -114,5 +124,6 @@ const createTables = async () => {
     await pool.end();
   }
 };
+
 
 createTables();
