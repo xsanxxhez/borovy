@@ -51,7 +51,6 @@ const createTables = async () => {
         description TEXT,
         location VARCHAR(200),
         total_places INTEGER NOT NULL,
-        current_workers INTEGER DEFAULT 0,
         start_date DATE,
         end_date DATE,
         requirements TEXT,
@@ -62,6 +61,23 @@ const createTables = async () => {
       );
     `);
     console.log('✅ vakhtas table created');
+
+    // Create specialties table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS specialties (
+        id SERIAL PRIMARY KEY,
+        vakhta_id INTEGER REFERENCES vakhtas(id) NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        description TEXT,
+        requirements TEXT,
+        total_places INTEGER NOT NULL,
+        salary INTEGER,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('✅ specialties table created');
 
     // Create borovs table
     await pool.query(`
@@ -93,6 +109,20 @@ const createTables = async () => {
     `);
     console.log('✅ borov_vakhta_history table created');
 
+    // Create borov_specialty_history table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS borov_specialty_history (
+        id SERIAL PRIMARY KEY,
+        borov_id INTEGER REFERENCES borovs(id) NOT NULL,
+        specialty_id INTEGER REFERENCES specialties(id) NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('✅ borov_specialty_history table created');
+
     // Create borov_stats table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS borov_stats (
@@ -105,17 +135,21 @@ const createTables = async () => {
     `);
     console.log('✅ borov_stats table created');
 
-    console.log('🎉 All tables created successfully!');
-    // В migrate.js - добавьте после создания таблиц
     // Add indexes for better performance
     await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_specialties_vakhta_id ON specialties(vakhta_id);
+      CREATE INDEX IF NOT EXISTS idx_specialties_active ON specialties(is_active) WHERE is_active = true;
+      CREATE INDEX IF NOT EXISTS idx_borov_specialty_borov_id ON borov_specialty_history(borov_id);
+      CREATE INDEX IF NOT EXISTS idx_borov_specialty_specialty_id ON borov_specialty_history(specialty_id);
+      CREATE INDEX IF NOT EXISTS idx_borov_specialty_status ON borov_specialty_history(status);
       CREATE INDEX IF NOT EXISTS idx_vakhtas_active ON vakhtas (is_active, start_date) WHERE is_active = true;
-    `);
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_borov_vakhta_active ON borov_vakhta_history (status, vakhta_id) WHERE status = 'active';
+      CREATE INDEX IF NOT EXISTS idx_borov_vakhta_borov_id ON borov_vakhta_history(borov_id);
+      CREATE INDEX IF NOT EXISTS idx_borov_vakhta_vakhta_id ON borov_vakhta_history(vakhta_id);
+      CREATE INDEX IF NOT EXISTS idx_borov_vakhta_status ON borov_vakhta_history(status) WHERE status = 'active';
     `);
     console.log('✅ Performance indexes created');
 
+    console.log('🎉 All tables created successfully!');
 
   } catch (error) {
     console.error('❌ Migration failed:', error);
@@ -124,6 +158,5 @@ const createTables = async () => {
     await pool.end();
   }
 };
-
 
 createTables();

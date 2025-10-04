@@ -11,9 +11,9 @@ router.get('/', async (req, res) => {
     const result = await pool.query(`
       SELECT *,
              (SELECT COUNT(*) FROM borov_vakhta_history
-              WHERE vacancy_id = vakhtas.id AND status = 'active') as current_workers,
+              WHERE vakhta_id = vakhtas.id AND status = 'active') as current_workers,
              total_places - (SELECT COUNT(*) FROM borov_vakhta_history
-                           WHERE vacancy_id = vakhtas.id AND status = 'active') as free_places
+                           WHERE vakhta_id = vakhtas.id AND status = 'active') as free_places
       FROM vakhtas
       WHERE is_active = true
       ORDER BY created_at DESC
@@ -34,7 +34,7 @@ router.get('/:id', async (req, res) => {
     const result = await pool.query(`
       SELECT *,
              (SELECT COUNT(*) FROM borov_vakhta_history
-              WHERE vacancy_id = $1 AND status = 'active') as current_workers
+              WHERE vakhta_id = $1 AND status = 'active') as current_workers
       FROM vakhtas
       WHERE id = $1
     `, [id]);

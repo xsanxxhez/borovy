@@ -4,6 +4,7 @@ const {
   createSlon,
   updateSlon,
   getAllPromoCodes,
+  createPromoCode,
   getAllBorovs,
   getAllVakhtas,
   createVakhta,
@@ -37,6 +38,7 @@ router.put('/slons/:id', validateSlon, updateSlon);
 
 // Promo codes
 router.get('/promocodes', getAllPromoCodes);
+router.post('/promocodes', createPromoCode);
 
 // Borovs
 router.get('/borovs', getAllBorovs);
@@ -51,5 +53,6 @@ router.get('/stats', getAdminStats);
 
 // Dashboard - все данные для админской панели
 router.get('/dashboard', getAdminDashboard);
+
 
 module.exports = router;

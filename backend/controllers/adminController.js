@@ -5,7 +5,7 @@ const { hashPassword } = require('../utils/passwordHash');
 const getAllSlons = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT s.*, 
+      SELECT s.*,
              COUNT(DISTINCT pc.id) as promo_codes_count,
              COUNT(DISTINCT b.id) as borovs_count
       FROM slons s
@@ -14,7 +14,7 @@ const getAllSlons = async (req, res) => {
       GROUP BY s.id
       ORDER BY s.created_at DESC
     `);
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get all slons error:', error);
@@ -26,7 +26,10 @@ const createSlon = async (req, res) => {
   try {
     const { username, display_name, contact_phone, contact_email, password } = req.body;
 
-    // Check if username exists
+    if (!username || !display_name || !password) {
+      return res.status(400).json({ error: 'Username, display_name and password are required' });
+    }
+
     const existingUser = await pool.query(
       'SELECT id FROM slons WHERE username = $1',
       [username]
@@ -36,11 +39,11 @@ const createSlon = async (req, res) => {
       return res.status(400).json({ error: 'Username already exists' });
     }
 
-    const hashedPassword = await hashPassword(password || 'default123');
+    const hashedPassword = await hashPassword(password);
 
     const result = await pool.query(
-      `INSERT INTO slons (username, display_name, contact_phone, contact_email, password_hash) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO slons (username, display_name, contact_phone, contact_email, password_hash)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id, username, display_name, contact_phone, contact_email, created_at`,
       [username, display_name, contact_phone, contact_email, hashedPassword]
     );
@@ -48,6 +51,9 @@ const createSlon = async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Create slon error:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -58,9 +64,9 @@ const updateSlon = async (req, res) => {
     const { display_name, contact_phone, contact_email, is_active } = req.body;
 
     const result = await pool.query(
-      `UPDATE slons 
+      `UPDATE slons
        SET display_name = $1, contact_phone = $2, contact_email = $3, is_active = $4, updated_at = NOW()
-       WHERE id = $5 
+       WHERE id = $5
        RETURNING id, username, display_name, contact_phone, contact_email, is_active, created_at`,
       [display_name, contact_phone, contact_email, is_active, id]
     );
@@ -80,7 +86,7 @@ const updateSlon = async (req, res) => {
 const getAllPromoCodes = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT pc.*, s.display_name as slon_name, 
+      SELECT pc.*, s.display_name as slon_name,
              COUNT(b.id) as borovs_count
       FROM promo_codes pc
       LEFT JOIN slons s ON pc.slon_id = s.id
@@ -88,7 +94,7 @@ const getAllPromoCodes = async (req, res) => {
       GROUP BY pc.id, s.display_name
       ORDER BY pc.created_at DESC
     `);
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get all promo codes error:', error);
@@ -110,7 +116,7 @@ const getAllBorovs = async (req, res) => {
       LEFT JOIN vakhtas v ON bs.current_vakhta_id = v.id
       ORDER BY b.created_at DESC
     `);
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get all borovs error:', error);
@@ -118,14 +124,13 @@ const getAllBorovs = async (req, res) => {
   }
 };
 
-// Vakhtas management
-// В функции getAllVakhtas исправляем SQL запрос
+// Vakhtas management - ИСПРАВЛЕННЫЕ ЗАПРОСЫ
 const getAllVakhtas = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT *,
              (SELECT COUNT(*) FROM borov_vakhta_history
-              WHERE vacancy_id = vakhtas.id AND status = 'active') as current_workers
+              WHERE vakhta_id = vakhtas.id AND status = 'active') as current_workers
       FROM vakhtas
       ORDER BY created_at DESC
     `);
@@ -141,14 +146,12 @@ const createVakhta = async (req, res) => {
   try {
     const { title, description, location, total_places, start_date, end_date, requirements, conditions } = req.body;
 
-    // Валидация обязательных полей
     if (!title || !location || !total_places || !start_date || !end_date) {
       return res.status(400).json({
         error: 'Missing required fields: title, location, total_places, start_date, end_date'
       });
     }
 
-    // Преобразование дат в правильный формат
     const startDate = new Date(start_date);
     const endDate = new Date(end_date);
 
@@ -184,11 +187,11 @@ const updateVakhta = async (req, res) => {
     const { title, description, location, total_places, start_date, end_date, requirements, conditions, is_active } = req.body;
 
     const result = await pool.query(
-      `UPDATE vakhtas 
-       SET title = $1, description = $2, location = $3, total_places = $4, 
-           start_date = $5, end_date = $6, requirements = $7, conditions = $8, 
+      `UPDATE vakhtas
+       SET title = $1, description = $2, location = $3, total_places = $4,
+           start_date = $5, end_date = $6, requirements = $7, conditions = $8,
            is_active = $9, updated_at = NOW()
-       WHERE id = $10 
+       WHERE id = $10
        RETURNING *`,
       [title, description, location, total_places, start_date, end_date, requirements, conditions, is_active, id]
     );
@@ -221,12 +224,11 @@ const getAdminStats = async (req, res) => {
       pool.query('SELECT COUNT(*) FROM promo_codes WHERE is_active = true')
     ]);
 
-    // Weekly registrations
     const weeklyRegistrations = await pool.query(`
       SELECT DATE_TRUNC('week', created_at) as week, COUNT(*) as count
-      FROM borovs 
+      FROM borovs
       WHERE created_at >= NOW() - INTERVAL '8 weeks'
-      GROUP BY week 
+      GROUP BY week
       ORDER BY week
     `);
 
@@ -244,12 +246,54 @@ const getAdminStats = async (req, res) => {
   }
 };
 
-// Admin-specific: Get all data for dashboard
+// Create promo code (admin)
+// В adminController.js добавьте эту функцию:
+
+// Create promo code (admin)
+const createPromoCode = async (req, res) => {
+  try {
+    const { code, description, slon_id } = req.body;
+
+    // Check if promo code exists
+    const existingCode = await pool.query(
+      'SELECT id FROM promo_codes WHERE code = $1',
+      [code]
+    );
+
+    if (existingCode.rows.length > 0) {
+      return res.status(400).json({ error: 'Promo code already exists' });
+    }
+
+    // Check if slon exists
+    const slonCheck = await pool.query(
+      'SELECT id FROM slons WHERE id = $1',
+      [slon_id]
+    );
+
+    if (slonCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Slon not found' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO promo_codes (slon_id, code, description)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [slon_id, code, description]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Create promo code error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Admin dashboard
 const getAdminDashboard = async (req, res) => {
   try {
     const [stats, slons, promocodes, borovs, vakhtas] = await Promise.all([
       pool.query(`
-        SELECT 
+        SELECT
           (SELECT COUNT(*) FROM slons WHERE is_active = true) as slons_count,
           (SELECT COUNT(*) FROM borovs) as borovs_count,
           (SELECT COUNT(*) FROM vakhtas) as vakhtas_count,
@@ -257,7 +301,7 @@ const getAdminDashboard = async (req, res) => {
           (SELECT COUNT(*) FROM promo_codes WHERE is_active = true) as promocodes_count
       `),
       pool.query(`
-        SELECT s.*, 
+        SELECT s.*,
                COUNT(DISTINCT pc.id) as promo_codes_count,
                COUNT(DISTINCT b.id) as borovs_count
         FROM slons s
@@ -268,7 +312,7 @@ const getAdminDashboard = async (req, res) => {
         LIMIT 10
       `),
       pool.query(`
-        SELECT pc.*, s.display_name as slon_name, 
+        SELECT pc.*, s.display_name as slon_name,
                COUNT(b.id) as borovs_count
         FROM promo_codes pc
         LEFT JOIN slons s ON pc.slon_id = s.id
@@ -286,10 +330,10 @@ const getAdminDashboard = async (req, res) => {
         LIMIT 10
       `),
       pool.query(`
-        SELECT *, 
-               (SELECT COUNT(*) FROM borov_vakhta_history 
+        SELECT *,
+               (SELECT COUNT(*) FROM borov_vakhta_history
                 WHERE vakhta_id = vakhtas.id AND status = 'active') as current_workers
-        FROM vakhtas 
+        FROM vakhtas
         ORDER BY created_at DESC
         LIMIT 10
       `)
@@ -313,6 +357,7 @@ module.exports = {
   createSlon,
   updateSlon,
   getAllPromoCodes,
+  createPromoCode,
   getAllBorovs,
   getAllVakhtas,
   createVakhta,

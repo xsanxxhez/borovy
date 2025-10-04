@@ -3,6 +3,9 @@ const express = require('express');
 const {
   register,
   getAvailableVakhtas,
+  getAvailableSpecialties,
+  joinSpecialty,
+  getMySpecialties,
   joinVakhta,
   getMyVakhtas,
   getBorovStats,
@@ -22,8 +25,13 @@ router.use(requireRole(['borov']));
 
 // Vakhtas
 router.get('/vakhtas/available', getAvailableVakhtas);
-router.post('/vakhtas/join', joinVakhta);  // ← Строка 16 с ошибкой
+router.post('/vakhtas/join', joinVakhta);
 router.get('/vakhtas/my', getMyVakhtas);
+
+// Specialties
+router.get('/specialties/available', getAvailableSpecialties);
+router.post('/specialties/join', joinSpecialty);
+router.get('/specialties/my', getMySpecialties);
 
 // Statistics
 router.get('/stats', getBorovStats);

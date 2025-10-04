@@ -5,7 +5,6 @@ const register = async (req, res) => {
   try {
     const { email, phone, password, full_name, birth_date, promo_code } = req.body;
 
-    // Check if user already exists
     const existingUser = await pool.query(
       'SELECT id FROM borovs WHERE email = $1 OR phone = $2',
       [email, phone]
@@ -15,7 +14,6 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'User with this email or phone already exists' });
     }
 
-    // Find promo code
     const promoResult = await pool.query(
       'SELECT id, slon_id FROM promo_codes WHERE code = $1 AND is_active = true',
       [promo_code]
@@ -26,11 +24,8 @@ const register = async (req, res) => {
     }
 
     const promoCodeId = promoResult.rows[0].id;
-
-    // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create borov
     const borovResult = await pool.query(
       `INSERT INTO borovs (email, phone, password_hash, full_name, birth_date, promo_code_id)
        VALUES ($1, $2, $3, $4, $5, $6)
@@ -38,13 +33,11 @@ const register = async (req, res) => {
       [email, phone, hashedPassword, full_name, birth_date, promoCodeId]
     );
 
-    // Create borov stats
     await pool.query(
       'INSERT INTO borov_stats (borov_id) VALUES ($1)',
       [borovResult.rows[0].id]
     );
 
-    // Update promo code usage count
     await pool.query(
       'UPDATE promo_codes SET usage_count = usage_count + 1 WHERE id = $1',
       [promoCodeId]
@@ -57,7 +50,7 @@ const register = async (req, res) => {
   }
 };
 
-// В borovController.js - исправленная функция getAvailableVakhtas
+// ИСПРАВЛЕННЫЕ SQL ЗАПРОСЫ
 const getAvailableVakhtas = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -74,7 +67,6 @@ const getAvailableVakhtas = async (req, res) => {
       ORDER BY start_date ASC
     `);
 
-    // Добавляем проверку на отрицательные значения free_places
     const vakhtas = result.rows.map(vakhta => ({
       ...vakhta,
       free_places: Math.max(0, vakhta.free_places)
@@ -86,16 +78,16 @@ const getAvailableVakhtas = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 const joinVakhta = async (req, res) => {
   try {
     const { vakhta_id } = req.body;
     const borov_id = req.user.id;
 
-    // Check if vakhta exists and has free places
     const vakhtaResult = await pool.query(`
       SELECT *,
              (SELECT COUNT(*) FROM borov_vakhta_history
-              WHERE vacancy_id = $1 AND status = 'active') as current_workers
+              WHERE vakhta_id = $1 AND status = 'active') as current_workers
       FROM vakhtas
       WHERE id = $1 AND is_active = true
     `, [vakhta_id]);
@@ -109,7 +101,6 @@ const joinVakhta = async (req, res) => {
       return res.status(400).json({ error: 'No free places available' });
     }
 
-    // Check if borov already has active vakhta
     const activeVakhtaResult = await pool.query(
       'SELECT id FROM borov_vakhta_history WHERE borov_id = $1 AND status = $2',
       [borov_id, 'active']
@@ -119,14 +110,12 @@ const joinVakhta = async (req, res) => {
       return res.status(400).json({ error: 'You already have an active vakhta' });
     }
 
-    // Join vakhta
     await pool.query(
-      `INSERT INTO borov_vakhta_history (borov_id, vacancy_id, start_date, status)
+      `INSERT INTO borov_vakhta_history (borov_id, vakhta_id, start_date, status)
        VALUES ($1, $2, $3, 'active')`,
       [borov_id, vakhta_id, vakhta.start_date]
     );
 
-    // Update borov stats
     await pool.query(
       'UPDATE borov_stats SET current_vakhta_id = $1 WHERE borov_id = $2',
       [vakhta_id, borov_id]
@@ -135,6 +124,108 @@ const joinVakhta = async (req, res) => {
     res.json({ message: 'Successfully joined vakhta' });
   } catch (error) {
     console.error('Join vakhta error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const getAvailableSpecialties = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT s.*, v.title as vakhta_title, v.location, v.start_date, v.end_date,
+             s.total_places - (SELECT COUNT(*) FROM borov_specialty_history
+                             WHERE specialty_id = s.id AND status = 'active') as free_places
+      FROM specialties s
+      JOIN vakhtas v ON s.vakhta_id = v.id
+      WHERE s.is_active = true
+        AND v.is_active = true
+        AND v.start_date > NOW()
+        AND s.total_places > (SELECT COUNT(*) FROM borov_specialty_history
+                            WHERE specialty_id = s.id AND status = 'active')
+      ORDER BY v.start_date ASC, s.title ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get available specialties error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const joinSpecialty = async (req, res) => {
+  try {
+    const { specialty_id } = req.body;
+    const borov_id = req.user.id;
+
+    const specialtyResult = await pool.query(`
+      SELECT s.*, v.title as vakhta_title, v.start_date,
+             (SELECT COUNT(*) FROM borov_specialty_history
+              WHERE specialty_id = $1 AND status = 'active') as current_workers
+      FROM specialties s
+      JOIN vakhtas v ON s.vakhta_id = v.id
+      WHERE s.id = $1 AND s.is_active = true AND v.is_active = true
+    `, [specialty_id]);
+
+    if (specialtyResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Specialty not found or not active' });
+    }
+
+    const specialty = specialtyResult.rows[0];
+    if (specialty.current_workers >= specialty.total_places) {
+      return res.status(400).json({ error: 'No free places available for this specialty' });
+    }
+
+    const activeSpecialtyResult = await pool.query(
+      `SELECT bsh.id, s.title
+       FROM borov_specialty_history bsh
+       JOIN specialties s ON bsh.specialty_id = s.id
+       WHERE bsh.borov_id = $1 AND bsh.status = 'active'`,
+      [borov_id]
+    );
+
+    if (activeSpecialtyResult.rows.length > 0) {
+      return res.status(400).json({
+        error: `You already have an active specialty: ${activeSpecialtyResult.rows[0].title}`
+      });
+    }
+
+    await pool.query(
+      `INSERT INTO borov_specialty_history (borov_id, specialty_id, start_date, status)
+       VALUES ($1, $2, $3, 'active')`,
+      [borov_id, specialty_id, specialty.start_date]
+    );
+
+    await pool.query(
+      'UPDATE borov_stats SET current_vakhta_id = $1 WHERE borov_id = $2',
+      [specialty.vakhta_id, borov_id]
+    );
+
+    res.json({
+      message: `Successfully joined specialty: ${specialty.title}`,
+      specialty: specialty.title,
+      vakhta: specialty.vakhta_title
+    });
+  } catch (error) {
+    console.error('Join specialty error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const getMySpecialties = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT bsh.*, s.title as specialty_title, s.salary,
+             v.title as vakhta_title, v.location,
+             bsh.start_date, bsh.end_date, bsh.status, bsh.created_at as joined_at
+      FROM borov_specialty_history bsh
+      JOIN specialties s ON bsh.specialty_id = s.id
+      JOIN vakhtas v ON s.vakhta_id = v.id
+      WHERE bsh.borov_id = $1
+      ORDER BY bsh.created_at DESC
+    `, [req.user.id]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get my specialties error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -181,7 +272,6 @@ const changePassword = async (req, res) => {
     const { current_password, new_password } = req.body;
     const borov_id = req.user.id;
 
-    // Получаем текущий хэш пароля
     const borovResult = await pool.query(
       'SELECT password_hash FROM borovs WHERE id = $1',
       [borov_id]
@@ -191,16 +281,13 @@ const changePassword = async (req, res) => {
       return res.status(404).json({ error: 'Borov not found' });
     }
 
-    // Проверяем текущий пароль
     const isValidPassword = await comparePassword(current_password, borovResult.rows[0].password_hash);
     if (!isValidPassword) {
       return res.status(400).json({ error: 'Current password is incorrect' });
     }
 
-    // Хэшируем новый пароль
     const hashedPassword = await hashPassword(new_password);
 
-    // Обновляем пароль
     await pool.query(
       'UPDATE borovs SET password_hash = $1 WHERE id = $2',
       [hashedPassword, borov_id]
@@ -219,6 +306,8 @@ module.exports = {
   joinVakhta,
   getMyVakhtas,
   getBorovStats,
-  changePassword
-
+  changePassword,
+  getAvailableSpecialties,
+  joinSpecialty,
+  getMySpecialties
 };

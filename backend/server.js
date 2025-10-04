@@ -66,6 +66,9 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/slon', require('./routes/slon'));
 app.use('/api/borov', require('./routes/borov'));
 app.use('/api/vakhta', require('./routes/vakhta'));
+// Добавьте после других роутов
+app.use('/api/specialties', require('./routes/specialty'));
+
 
 // 404 handler
 app.use('*', (req, res) => {

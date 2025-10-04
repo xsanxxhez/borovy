@@ -1,6 +1,5 @@
 const { pool } = require('../config/database');
 
-// Promo codes management for slon
 const getMyPromoCodes = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -11,7 +10,7 @@ const getMyPromoCodes = async (req, res) => {
       GROUP BY pc.id
       ORDER BY pc.created_at DESC
     `, [req.user.id]);
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get my promo codes error:', error);
@@ -23,7 +22,6 @@ const createPromoCode = async (req, res) => {
   try {
     const { code, description } = req.body;
 
-    // Check if promo code exists
     const existingCode = await pool.query(
       'SELECT id FROM promo_codes WHERE code = $1',
       [code]
@@ -34,8 +32,8 @@ const createPromoCode = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO promo_codes (slon_id, code, description) 
-       VALUES ($1, $2, $3) 
+      `INSERT INTO promo_codes (slon_id, code, description)
+       VALUES ($1, $2, $3)
        RETURNING *`,
       [req.user.id, code, description]
     );
@@ -47,19 +45,18 @@ const createPromoCode = async (req, res) => {
   }
 };
 
-// Borovs management for slon
-// В функции getMyBorovs исправляем SQL запрос
+// ИСПРАВЛЕННЫЙ SQL ЗАПРОС
 const getMyBorovs = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT b.*, pc.code as promo_code,
              bs.total_vakhtas_completed, bs.total_work_days,
              v.title as current_vakhta,
-             CASE WHEN COALESCE(bs.current_vakhta_id, bs.current_vacancy_id) IS NOT NULL THEN true ELSE false END as is_active
+             CASE WHEN bs.current_vakhta_id IS NOT NULL THEN true ELSE false END as is_active
       FROM borovs b
       LEFT JOIN promo_codes pc ON b.promo_code_id = pc.id
       LEFT JOIN borov_stats bs ON b.id = bs.borov_id
-      LEFT JOIN vakhtas v ON COALESCE(bs.current_vakhta_id, bs.current_vacancy_id) = v.id
+      LEFT JOIN vakhtas v ON bs.current_vakhta_id = v.id
       WHERE pc.slon_id = $1
       ORDER BY b.created_at DESC
     `, [req.user.id]);
@@ -71,7 +68,6 @@ const getMyBorovs = async (req, res) => {
   }
 };
 
-// Statistics for slon
 const getSlonStats = async (req, res) => {
   try {
     const slonId = req.user.id;
@@ -84,34 +80,32 @@ const getSlonStats = async (req, res) => {
     ] = await Promise.all([
       pool.query('SELECT COUNT(*) FROM promo_codes WHERE slon_id = $1 AND is_active = true', [slonId]),
       pool.query(`
-        SELECT COUNT(*) FROM borovs b 
-        JOIN promo_codes pc ON b.promo_code_id = pc.id 
+        SELECT COUNT(*) FROM borovs b
+        JOIN promo_codes pc ON b.promo_code_id = pc.id
         WHERE pc.slon_id = $1
       `, [slonId]),
       pool.query(`
-        SELECT COUNT(*) FROM borovs b 
-        JOIN promo_codes pc ON b.promo_code_id = pc.id 
-        JOIN borov_stats bs ON b.id = bs.borov_id 
+        SELECT COUNT(*) FROM borovs b
+        JOIN promo_codes pc ON b.promo_code_id = pc.id
+        JOIN borov_stats bs ON b.id = bs.borov_id
         WHERE pc.slon_id = $1 AND bs.current_vakhta_id IS NOT NULL
       `, [slonId]),
       pool.query(`
-        SELECT COUNT(*) FROM borovs b 
-        JOIN promo_codes pc ON b.promo_code_id = pc.id 
+        SELECT COUNT(*) FROM borovs b
+        JOIN promo_codes pc ON b.promo_code_id = pc.id
         WHERE pc.slon_id = $1
       `, [slonId])
     ]);
 
-    // Weekly stats
     const weeklyStats = await pool.query(`
       SELECT DATE_TRUNC('week', b.created_at) as week, COUNT(*) as count
-      FROM borovs b 
-      JOIN promo_codes pc ON b.promo_code_id = pc.id 
+      FROM borovs b
+      JOIN promo_codes pc ON b.promo_code_id = pc.id
       WHERE pc.slon_id = $1 AND b.created_at >= NOW() - INTERVAL '8 weeks'
-      GROUP BY week 
+      GROUP BY week
       ORDER BY week
     `, [slonId]);
 
-    // Promo code effectiveness
     const promoEffectiveness = await pool.query(`
       SELECT pc.code, pc.description, COUNT(b.id) as borovs_count
       FROM promo_codes pc
