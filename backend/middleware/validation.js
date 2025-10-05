@@ -5,7 +5,8 @@ const validateSlon = (req, res, next) => {
     username: Joi.string().alphanum().min(3).max(30).required(),
     display_name: Joi.string().min(2).max(100).required(),
     contact_phone: Joi.string().allow('').optional(),
-    contact_email: Joi.string().email().allow('').optional()
+    contact_email: Joi.string().email().allow('').optional(),
+    password: Joi.string().min(6).required() // ← ДОБАВЬ ЭТУ СТРОКУ
   });
 
   const { error } = schema.validate(req.body);
@@ -28,7 +29,6 @@ const validatePromoCode = (req, res, next) => {
   next();
 };
 
-// В validation.js - улучшенная валидация для вахт
 const validateVakhta = (req, res, next) => {
   const schema = Joi.object({
     title: Joi.string().min(5).max(200).required().messages({
@@ -63,6 +63,7 @@ const validateVakhta = (req, res, next) => {
   }
   next();
 };
+
 const validateBorov = (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string().email().required(),

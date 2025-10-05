@@ -10,7 +10,11 @@ const {
   createVakhta,
   updateVakhta,
   getAdminStats,
-  getAdminDashboard
+  getAdminDashboard,
+  getAllSpecialties,
+  getBorovActivity,
+  getVakhtasWithSpecialties,
+  createSpecialty
 } = require('../controllers/adminController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validateSlon, validateVakhta } = require('../middleware/validation');
@@ -22,12 +26,16 @@ router.use(authenticate);
 
 // Специальная проверка для админа - только пользователь с username 'admin'
 const requireAdmin = (req, res, next) => {
-  if (req.user.username === 'admin') {
+  console.log('Admin check - user:', req.user); // Добавим лог
+
+  if (req.user.role === 'admin' || req.user.username === 'admin') {
     next();
   } else {
+    console.log('Admin access denied for user:', req.user.username);
     res.status(403).json({ error: 'Admin access required' });
   }
 };
+
 
 router.use(requireAdmin);
 
@@ -53,6 +61,17 @@ router.get('/stats', getAdminStats);
 
 // Dashboard - все данные для админской панели
 router.get('/dashboard', getAdminDashboard);
+router.get('/specialties', getAllSpecialties);
+router.post('/specialties', createSpecialty);
+
+// Activity logs
+router.get('/activity/borovs', getBorovActivity);
+// Добавь этот роут после существующих vakhtas роутов:
+
+// Vakhtas with specialties
+router.get('/vakhtas-with-specialties', getVakhtasWithSpecialties);
+
+
 
 
 module.exports = router;

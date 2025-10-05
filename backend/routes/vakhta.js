@@ -1,31 +1,13 @@
-// routes/vakhta.js
 const express = require('express');
-const { pool } = require('../config/database');
+const { getVakhtasWithSpecialties } = require('../controllers/vakhtaController');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Public route - get active vakhtas
-router.get('/', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT *,
-             (SELECT COUNT(*) FROM borov_vakhta_history
-              WHERE vakhta_id = vakhtas.id AND status = 'active') as current_workers,
-             total_places - (SELECT COUNT(*) FROM borov_vakhta_history
-                           WHERE vakhta_id = vakhtas.id AND status = 'active') as free_places
-      FROM vakhtas
-      WHERE is_active = true
-      ORDER BY created_at DESC
-    `);
+// Public route - get active vakhtas with specialties
+router.get('/', getVakhtasWithSpecialties);
 
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Get vakhtas error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
+// Оставь остальные роуты если они нужны
 // Get single vakhta
 router.get('/:id', async (req, res) => {
   try {

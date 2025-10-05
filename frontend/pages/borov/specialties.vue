@@ -330,19 +330,36 @@ const filters = reactive({
 const loadSpecialties = async () => {
   try {
     loading.value = true
-    const response = await $fetch('http://localhost:3001/api/borov/specialties/available', {
+    // Загружаем предприятия со специальностями
+    const response = await $fetch('http://localhost:3001/api/vakhta', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
     })
-    specialties.value = response
+
+    // Преобразуем данные в плоский список специальностей
+    const allSpecialties = []
+    response.forEach(vakhta => {
+      if (vakhta.specialties && vakhta.specialties.length > 0) {
+        vakhta.specialties.forEach(specialty => {
+          allSpecialties.push({
+            ...specialty,
+            vakhta_title: vakhta.title,
+            location: vakhta.location,
+            start_date: vakhta.start_date,
+            end_date: vakhta.end_date
+          })
+        })
+      }
+    })
+
+    specialties.value = allSpecialties
   } catch (error) {
     console.error('Error loading specialties:', error)
   } finally {
     loading.value = false
   }
 }
-
 // Проверка активной специальности
 const hasActiveSpecialty = ref(false)
 

@@ -67,6 +67,59 @@ const getMyBorovs = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+const getMyBorovActivity = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        bsh.*,
+        b.full_name as borov_name,
+        b.phone as borov_phone,
+        s.title as specialty_title,
+        v.title as vakhta_title,
+        pc.code as promo_code
+      FROM borov_specialty_history bsh
+      JOIN borovs b ON bsh.borov_id = b.id
+      JOIN specialties s ON bsh.specialty_id = s.id
+      JOIN vakhtas v ON s.vakhta_id = v.id
+      JOIN promo_codes pc ON b.promo_code_id = pc.id
+      WHERE pc.slon_id = $1
+      ORDER BY bsh.created_at DESC
+      LIMIT 50
+    `, [req.user.id]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get my borov activity error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Получение статистики по специальностям
+const getMySpecialtiesStats = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        s.title as specialty_title,
+        v.title as vakhta_title,
+        COUNT(bsh.id) as total_borovs,
+        COUNT(CASE WHEN bsh.status = 'active' THEN 1 END) as active_borovs,
+        AVG(s.salary) as avg_salary
+      FROM specialties s
+      JOIN vakhtas v ON s.vakhta_id = v.id
+      JOIN borov_specialty_history bsh ON s.id = bsh.specialty_id
+      JOIN borovs b ON bsh.borov_id = b.id
+      JOIN promo_codes pc ON b.promo_code_id = pc.id
+      WHERE pc.slon_id = $1
+      GROUP BY s.title, v.title
+      ORDER BY total_borovs DESC
+    `, [req.user.id]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get my specialties stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 const getSlonStats = async (req, res) => {
   try {
@@ -133,5 +186,7 @@ module.exports = {
   getMyPromoCodes,
   createPromoCode,
   getMyBorovs,
-  getSlonStats
+  getSlonStats,
+  getMyBorovActivity,
+  getMySpecialtiesStats
 };

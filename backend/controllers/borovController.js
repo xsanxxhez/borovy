@@ -247,17 +247,32 @@ const getMyVakhtas = async (req, res) => {
   }
 };
 
+// Убедись что эта функция существует в borovController.js
 const getBorovStats = async (req, res) => {
   try {
+    const borov_id = req.user.id;
+
     const result = await pool.query(`
       SELECT bs.*, v.title as current_vakhta_title
       FROM borov_stats bs
       LEFT JOIN vakhtas v ON bs.current_vakhta_id = v.id
       WHERE bs.borov_id = $1
-    `, [req.user.id]);
+    `, [borov_id]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Stats not found' });
+      // Если статистики нет - создаем пустую запись
+      await pool.query(
+        'INSERT INTO borov_stats (borov_id) VALUES ($1)',
+        [borov_id]
+      );
+
+      // Возвращаем пустую статистику
+      return res.json({
+        total_vakhtas_completed: 0,
+        total_work_days: 0,
+        current_vakhta_id: null,
+        current_vakhta_title: null
+      });
     }
 
     res.json(result.rows[0]);

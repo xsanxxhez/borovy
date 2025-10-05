@@ -355,9 +355,11 @@ const createVakhtaWithSpecialties = async () => {
       }
     })
 
+    console.log('Vakhta created:', vakhtaResponse)
+
     // Создаем специальности для этого предприятия
-    for (const specialty of specialties.value) {
-      await $fetch('http://localhost:3001/api/specialties', {
+    const specialtyPromises = specialties.value.map(specialty =>
+      $fetch('http://localhost:3001/api/specialties', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authStore.token}`
@@ -368,10 +370,13 @@ const createVakhtaWithSpecialties = async () => {
           description: specialty.description,
           requirements: specialty.requirements,
           total_places: specialty.total_places,
-          salary: specialty.salary
+          salary: specialty.salary || null
         }
       })
-    }
+    )
+
+    await Promise.all(specialtyPromises)
+    console.log('All specialties created successfully')
 
     emit('saved')
     closeModal()
@@ -383,6 +388,7 @@ const createVakhtaWithSpecialties = async () => {
     loading.value = false
   }
 }
+
 
 const closeModal = () => {
   emit('close')

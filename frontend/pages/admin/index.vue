@@ -70,15 +70,171 @@
           <span class="action-text">Новое Предприятие</span>
         </button>
 
-        <button @click="showCreatePromo = true" class="action-card">
-          <span class="action-icon">🎫</span>
-          <span class="action-text">Создать Промокод</span>
-        </button>
-
         <button @click="exportData" class="action-card">
           <span class="action-icon">📊</span>
           <span class="action-text">Экспорт данных</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Модальное окно создания слона -->
+    <div v-if="showCreateSlon" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Создать нового Слона</h3>
+          <button @click="showCreateSlon = false" class="close-btn">✕</button>
+        </div>
+        <form @submit.prevent="createSlon" class="modal-form">
+          <div class="form-group">
+            <label>Логин *</label>
+            <input v-model="newSlon.username" type="text" required placeholder="Уникальный логин">
+          </div>
+          <div class="form-group">
+            <label>Имя для отображения *</label>
+            <input v-model="newSlon.display_name" type="text" required placeholder="Полное имя">
+          </div>
+          <div class="form-group">
+            <label>Пароль *</label>
+            <input v-model="newSlon.password" type="password" required placeholder="Минимум 6 символов">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input v-model="newSlon.contact_email" type="email" placeholder="email@example.com">
+          </div>
+          <div class="form-group">
+            <label>Телефон</label>
+            <input v-model="newSlon.contact_phone" type="tel" placeholder="+79990000000">
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="showCreateSlon = false" class="btn btn-outline">Отмена</button>
+            <button type="submit" :disabled="creatingSlon" class="btn btn-primary">
+              {{ creatingSlon ? 'Создание...' : 'Создать Слона' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Модальное окно создания вахты -->
+    <div v-if="showCreateVakhta" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Создать новую Вахту</h3>
+          <button @click="showCreateVakhta = false" class="close-btn">✕</button>
+        </div>
+        <form @submit.prevent="createVakhta" class="modal-form">
+          <div class="form-group">
+            <label>Название вахты *</label>
+            <input v-model="newVakhta.title" type="text" required placeholder="Например: Разнорабочий на склад">
+          </div>
+          <div class="form-group">
+            <label>Местоположение *</label>
+            <input v-model="newVakhta.location" type="text" required placeholder="Например: Москва, склад №1">
+          </div>
+          <div class="form-group">
+            <label>Количество мест *</label>
+            <input v-model="newVakhta.total_places" type="number" min="1" max="100" required>
+          </div>
+          <div class="form-group">
+            <label>Дата начала *</label>
+            <input v-model="newVakhta.start_date" type="date" required>
+          </div>
+          <div class="form-group">
+            <label>Дата окончания *</label>
+            <input v-model="newVakhta.end_date" type="date" required>
+          </div>
+          <div class="form-group">
+            <label>Описание</label>
+            <textarea v-model="newVakhta.description" rows="3" placeholder="Подробное описание вахты..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Требования</label>
+            <textarea v-model="newVakhta.requirements" rows="2" placeholder="Навыки, опыт, физическая форма..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Условия</label>
+            <textarea v-model="newVakhta.conditions" rows="2" placeholder="Условия труда, проживание, питание..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="showCreateVakhta = false" class="btn btn-outline">Отмена</button>
+            <button type="submit" :disabled="creatingVakhta" class="btn btn-primary">
+              {{ creatingVakhta ? 'Создание...' : 'Создать Вахту' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Модальное окно создания специальности -->
+    <div v-if="showCreateSpecialtyModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Создать специальность для {{ selectedVakhta?.title }}</h3>
+          <button @click="closeCreateSpecialtyModal" class="close-btn">✕</button>
+        </div>
+        <form @submit.prevent="createSpecialty" class="modal-form">
+          <div class="form-group">
+            <label>Название специальности *</label>
+            <input v-model="newSpecialty.title" type="text" required placeholder="Например: Разнорабочий">
+          </div>
+          <div class="form-group">
+            <label>Количество мест *</label>
+            <input v-model="newSpecialty.total_places" type="number" min="1" max="100" required>
+          </div>
+          <div class="form-group">
+            <label>Зарплата в день (₽) *</label>
+            <input v-model="newSpecialty.salary" type="number" min="1000" required>
+          </div>
+          <div class="form-group">
+            <label>Описание</label>
+            <textarea v-model="newSpecialty.description" rows="3" placeholder="Описание работы..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Требования</label>
+            <textarea v-model="newSpecialty.requirements" rows="2" placeholder="Требования к работнику..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="closeCreateSpecialtyModal" class="btn btn-outline">Отмена</button>
+            <button type="submit" :disabled="creatingSpecialty" class="btn btn-primary">
+              {{ creatingSpecialty ? 'Создание...' : 'Создать Специальность' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Модальное окно создания промокода -->
+    <div v-if="showCreatePromo" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Создать новый Промокод</h3>
+          <button @click="showCreatePromo = false" class="close-btn">✕</button>
+        </div>
+        <form @submit.prevent="createPromoCode" class="modal-form">
+          <div class="form-group">
+            <label>Код промокода *</label>
+            <input v-model="newPromo.code" type="text" required placeholder="Например: SLON1_TIKTOK">
+          </div>
+          <div class="form-group">
+            <label>Слон *</label>
+            <select v-model="newPromo.slon_id" required>
+              <option value="">Выберите слона</option>
+              <option v-for="slon in dashboardData.slons" :key="slon.id" :value="slon.id">
+                {{ slon.display_name }} (@{{ slon.username }})
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Описание</label>
+            <textarea v-model="newPromo.description" rows="3" placeholder="Описание промокода..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="showCreatePromo = false" class="btn btn-outline">Отмена</button>
+            <button type="submit" :disabled="creatingPromo" class="btn btn-primary">
+              {{ creatingPromo ? 'Создание...' : 'Создать Промокод' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -174,41 +330,117 @@
           </div>
         </div>
 
-        <!-- Enterprises Management -->
+        <!-- Enterprises Management with Specialties -->
         <div v-if="activeTab === 'enterprises'" class="tab-pane">
           <div class="section-header">
-            <h2>🏗️ Управление Предприятиями</h2>
+            <h2>🏗️ Управление Предприятиями и Специальностями</h2>
             <button @click="showCreateVakhta = true" class="btn btn-primary">
               ➕ Новое Предприятие
             </button>
           </div>
 
-          <div class="enterprises-grid">
+          <!-- Предприятия с специальностями -->
+          <div class="enterprises-container">
             <div
-              v-for="vakhta in dashboardData.vakhtas"
+              v-for="vakhta in vakhtasWithSpecialties"
               :key="vakhta.id"
               class="enterprise-card"
             >
-              <div class="enterprise-header">
-                <h3>{{ vakhta.title }}</h3>
-                <span :class="['status-badge', vakhta.is_active ? 'active' : 'inactive']">
-                  {{ vakhta.is_active ? 'Активно' : 'Неактивно' }}
-                </span>
+              <!-- Заголовок предприятия -->
+              <div class="enterprise-header" @click="toggleVakhtaExpansion(vakhta.id)">
+                <div class="enterprise-main">
+                  <div class="enterprise-title">
+                    <h3>{{ vakhta.title }}</h3>
+                    <span :class="['status-badge', vakhta.is_active ? 'active' : 'inactive']">
+                      {{ vakhta.is_active ? 'Активно' : 'Неактивно' }}
+                    </span>
+                  </div>
+                  <p class="location">📍 {{ vakhta.location }}</p>
+                  <p class="dates">📅 {{ formatDate(vakhta.start_date) }} - {{ formatDate(vakhta.end_date) }}</p>
+                  <p class="workers">👥 {{ vakhta.current_workers || 0 }}/{{ vakhta.total_places }} работников</p>
+                </div>
+
+                <div class="enterprise-actions">
+                  <button
+                    @click.stop="showCreateSpecialty(vakhta)"
+                    class="btn btn-success btn-sm"
+                  >
+                    ➕ Специальность
+                  </button>
+                  <button
+                    @click.stop="toggleVakhtaStatus(vakhta)"
+                    :class="['btn', 'btn-sm', vakhta.is_active ? 'btn-warning' : 'btn-success']"
+                  >
+                    {{ vakhta.is_active ? '⏸️ Стоп' : '▶️ Старт' }}
+                  </button>
+                  <button
+                    @click.stop="toggleVakhtaExpansion(vakhta.id)"
+                    class="btn btn-outline btn-sm"
+                  >
+                    {{ expandedVakhtas.includes(vakhta.id) ? '▲' : '▼' }}
+                  </button>
+                </div>
               </div>
 
-              <div class="enterprise-info">
-                <p class="location">📍 {{ vakhta.location }}</p>
-                <p class="dates">📅 {{ formatDate(vakhta.start_date) }} - {{ formatDate(vakhta.end_date) }}</p>
-                <p class="workers">👥 {{ vakhta.current_workers || 0 }}/{{ vakhta.total_places }} работников</p>
-              </div>
+              <!-- Специальности предприятия (раскрывающийся список) -->
+              <div v-if="expandedVakhtas.includes(vakhta.id)" class="specialties-section">
+                <div class="specialties-header">
+                  <h4>👷 Специальности предприятия</h4>
+                  <span class="specialties-count">
+                    {{ vakhta.specialties?.length || 0 }} специальностей
+                  </span>
+                </div>
 
-              <div class="enterprise-actions">
-                <button
-                  @click="toggleVakhtaStatus(vakhta)"
-                  :class="['btn', 'btn-sm', vakhta.is_active ? 'btn-warning' : 'btn-success']"
-                >
-                  {{ vakhta.is_active ? '⏸️ Стоп' : '▶️ Старт' }}
-                </button>
+                <div v-if="!vakhta.specialties || vakhta.specialties.length === 0" class="no-specialties">
+                  <p>😔 Нет созданных специальностей</p>
+                  <button @click="showCreateSpecialty(vakhta)" class="btn btn-primary btn-sm">
+                    ➕ Создать первую специальность
+                  </button>
+                </div>
+
+                <div v-else class="specialties-grid">
+                  <div
+                    v-for="specialty in vakhta.specialties"
+                    :key="specialty.id"
+                    class="specialty-card"
+                  >
+                    <div class="specialty-header">
+                      <div class="specialty-info">
+                        <h5>{{ specialty.title }}</h5>
+                        <p class="specialty-description" v-if="specialty.description">
+                          {{ specialty.description }}
+                        </p>
+                        <div class="specialty-details">
+                          <span class="salary">💰 {{ formatSalary(specialty.salary) }}/день</span>
+                          <span class="places">
+                            👥 {{ specialty.current_workers || 0 }}/{{ specialty.total_places }}
+                          </span>
+                          <span v-if="specialty.requirements" class="requirements">
+                            📋 {{ truncateText(specialty.requirements, 50) }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="specialty-actions">
+                        <span :class="['status-badge', specialty.is_active ? 'active' : 'inactive']">
+                          {{ specialty.is_active ? 'Активна' : 'Неактивна' }}
+                        </span>
+                        <button
+                          @click="editSpecialty(specialty)"
+                          class="btn btn-outline btn-sm"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          @click="toggleSpecialtyStatus(specialty)"
+                          :class="['btn', 'btn-sm', specialty.is_active ? 'btn-warning' : 'btn-success']"
+                        >
+                          {{ specialty.is_active ? '⏸️' : '▶️' }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -311,27 +543,36 @@
             </table>
           </div>
         </div>
+
+        <!-- Activity Logs -->
+        <div v-if="activeTab === 'activity'" class="tab-pane">
+          <div class="section-header">
+            <h2>📊 Активность Боровов</h2>
+          </div>
+
+          <div class="activity-list">
+            <div v-for="activity in borovActivity" :key="activity.id" class="activity-item">
+              <div class="activity-icon">
+                {{ getActivityIcon(activity.status) }}
+              </div>
+              <div class="activity-content">
+                <div class="activity-header">
+                  <strong>{{ activity.borov_name }}</strong>
+                  <span class="activity-time">{{ formatTime(activity.created_at) }}</span>
+                </div>
+                <p class="activity-text">
+                  {{ getActivityText(activity) }}
+                </p>
+                <div class="activity-details">
+                  <span class="detail">📱 {{ activity.borov_phone }}</span>
+                  <span v-if="activity.slon_name" class="detail">🐘 Слон: {{ activity.slon_name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- Modals -->
-    <CreateSlonModal
-      v-if="showCreateSlon"
-      @close="showCreateSlon = false"
-      @saved="handleSlonCreated"
-    />
-
-    <CreateVakhtaModal
-      v-if="showCreateVakhta"
-      @close="showCreateVakhta = false"
-      @saved="handleVakhtaCreated"
-    />
-
-    <CreatePromoModal
-      v-if="showCreatePromo"
-      @close="showCreatePromo = false"
-      @saved="handlePromoCreated"
-    />
 
     <!-- Notification -->
     <div v-if="notification.show" class="notification" :class="notification.type">
@@ -368,7 +609,51 @@ const loading = ref(false)
 const showCreateSlon = ref(false)
 const showCreateVakhta = ref(false)
 const showCreatePromo = ref(false)
+const creatingSlon = ref(false)
+const creatingVakhta = ref(false)
+const creatingPromo = ref(false)
 const lastUpdated = ref('')
+
+// Новые данные для иерархического отображения
+const vakhtasWithSpecialties = ref([])
+const borovActivity = ref([])
+const expandedVakhtas = ref([])
+const showCreateSpecialtyModal = ref(false)
+const selectedVakhta = ref(null)
+const creatingSpecialty = ref(false)
+
+const newSlon = ref({
+  username: '',
+  display_name: '',
+  password: '',
+  contact_email: '',
+  contact_phone: ''
+})
+
+const newVakhta = ref({
+  title: '',
+  description: '',
+  location: '',
+  total_places: 10,
+  start_date: '',
+  end_date: '',
+  requirements: '',
+  conditions: ''
+})
+
+const newSpecialty = ref({
+  title: '',
+  description: '',
+  requirements: '',
+  total_places: 10,
+  salary: 5000
+})
+
+const newPromo = ref({
+  code: '',
+  description: '',
+  slon_id: ''
+})
 
 const notification = ref({
   show: false,
@@ -378,12 +663,13 @@ const notification = ref({
   icon: '✅'
 })
 
-// Tabs configuration
+// Обновляем tabs - убираем отдельную вкладку specialties
 const tabs = [
   { id: 'slons', name: 'Слоны', icon: '🐘' },
   { id: 'enterprises', name: 'Предприятия', icon: '🏗️' },
   { id: 'promocodes', name: 'Промокоды', icon: '🎫' },
-  { id: 'borovs', name: 'Боровы', icon: '💪' }
+  { id: 'borovs', name: 'Боровы', icon: '💪' },
+  { id: 'activity', name: 'Активность', icon: '📊' }
 ]
 
 // Computed
@@ -392,9 +678,10 @@ const totalStats = computed(() => dashboardData.value.stats || {})
 const getTabCount = (tabId: string) => {
   switch (tabId) {
     case 'slons': return dashboardData.value.slons?.length || 0
-    case 'enterprises': return dashboardData.value.vakhtas?.length || 0
+    case 'enterprises': return vakhtasWithSpecialties.value?.length || 0
     case 'promocodes': return dashboardData.value.promocodes?.length || 0
     case 'borovs': return dashboardData.value.borovs?.length || 0
+    case 'activity': return borovActivity.value?.length || 0
     default: return 0
   }
 }
@@ -413,6 +700,12 @@ const loadAdminDashboard = async () => {
     dashboardData.value = response
     lastUpdated.value = new Date().toLocaleTimeString('ru-RU')
 
+    // Загружаем предприятия со специальностями и активность
+    await Promise.all([
+      loadVakhtasWithSpecialties(),
+      loadBorovActivity()
+    ])
+
   } catch (error) {
     console.error('Error loading admin dashboard:', error)
     showNotification('Ошибка загрузки', 'Не удалось загрузить данные', 'error')
@@ -421,16 +714,196 @@ const loadAdminDashboard = async () => {
   }
 }
 
+// Загрузка предприятий со специальностями
+const loadVakhtasWithSpecialties = async () => {
+  try {
+    const response = await $fetch('http://localhost:3001/api/admin/vakhtas-with-specialties', {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    vakhtasWithSpecialties.value = response
+  } catch (error) {
+    console.error('Error loading vakhtas with specialties:', error)
+  }
+}
+
+// Загрузка активности боровов
+const loadBorovActivity = async () => {
+  try {
+    const response = await $fetch('http://localhost:3001/api/admin/activity/borovs', {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    borovActivity.value = response
+  } catch (error) {
+    console.error('Error loading borov activity:', error)
+  }
+}
+
 const refreshData = async () => {
   await loadAdminDashboard()
   showNotification('Данные обновлены', 'Все данные успешно обновлены', 'success')
+}
+
+const createSlon = async () => {
+  try {
+    creatingSlon.value = true
+
+    await $fetch('http://localhost:3001/api/admin/slons', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: newSlon.value
+    })
+
+    showNotification('Слон создан', 'Новый слон успешно добавлен в систему', 'success')
+    showCreateSlon.value = false
+    resetNewSlon()
+    await refreshData()
+  } catch (error: any) {
+    console.error('Error creating slon:', error)
+    showNotification('Ошибка создания', error.data?.error || 'Не удалось создать слона', 'error')
+  } finally {
+    creatingSlon.value = false
+  }
+}
+
+const createVakhta = async () => {
+  try {
+    creatingVakhta.value = true
+
+    await $fetch('http://localhost:3001/api/admin/vakhtas', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: newVakhta.value
+    })
+
+    showNotification('Вахта создана', 'Новая вахта успешно создана', 'success')
+    showCreateVakhta.value = false
+    resetNewVakhta()
+    await refreshData()
+  } catch (error: any) {
+    console.error('Error creating vakhta:', error)
+    showNotification('Ошибка создания', error.data?.error || 'Не удалось создать вахту', 'error')
+  } finally {
+    creatingVakhta.value = false
+  }
+}
+
+const createPromoCode = async () => {
+  try {
+    creatingPromo.value = true
+
+    await $fetch('http://localhost:3001/api/admin/promocodes', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: newPromo.value
+    })
+
+    showNotification('Промокод создан', 'Новый промокод успешно создан', 'success')
+    showCreatePromo.value = false
+    resetNewPromo()
+    await refreshData()
+  } catch (error: any) {
+    console.error('Error creating promo code:', error)
+    showNotification('Ошибка создания', error.data?.error || 'Не удалось создать промокод', 'error')
+  } finally {
+    creatingPromo.value = false
+  }
+}
+
+// Переключение раскрытия предприятия
+const toggleVakhtaExpansion = (vakhtaId: number) => {
+  const index = expandedVakhtas.value.indexOf(vakhtaId)
+  if (index > -1) {
+    expandedVakhtas.value.splice(index, 1)
+  } else {
+    expandedVakhtas.value.push(vakhtaId)
+  }
+}
+
+// Показать модальное окно создания специальности
+const showCreateSpecialty = (vakhta: any) => {
+  selectedVakhta.value = vakhta
+  showCreateSpecialtyModal.value = true
+}
+
+// Закрыть модальное окно создания специальности
+const closeCreateSpecialtyModal = () => {
+  showCreateSpecialtyModal.value = false
+  selectedVakhta.value = null
+  resetNewSpecialty()
+}
+
+// Создание специальности
+const createSpecialty = async () => {
+  if (!selectedVakhta.value) return
+
+  try {
+    creatingSpecialty.value = true
+
+    await $fetch('http://localhost:3001/api/admin/specialties', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: {
+        ...newSpecialty.value,
+        vakhta_id: selectedVakhta.value.id
+      }
+    })
+
+    showNotification('Специальность создана', 'Новая специальность успешно добавлена', 'success')
+    closeCreateSpecialtyModal()
+    await loadVakhtasWithSpecialties()
+  } catch (error: any) {
+    showNotification('Ошибка создания', error.data?.error || 'Не удалось создать специальность', 'error')
+  } finally {
+    creatingSpecialty.value = false
+  }
+}
+
+// Переключение статуса специальности
+const toggleSpecialtyStatus = async (specialty: any) => {
+  try {
+    await $fetch(`http://localhost:3001/api/admin/specialties/${specialty.id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: {
+        ...specialty,
+        is_active: !specialty.is_active
+      }
+    })
+
+    showNotification(
+      'Статус изменен',
+      `Специальность "${specialty.title}" ${!specialty.is_active ? 'активирована' : 'деактивирована'}`,
+      'success'
+    )
+    await loadVakhtasWithSpecialties()
+  } catch (error: any) {
+    showNotification('Ошибка', error.data?.error || 'Не удалось изменить статус', 'error')
+  }
 }
 
 const toggleSlonStatus = async (slon: any) => {
   try {
     await $fetch(`http://localhost:3001/api/admin/slons/${slon.id}`, {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${authStore.token}` },
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      },
       body: {
         ...slon,
         is_active: !slon.is_active
@@ -452,7 +925,10 @@ const toggleVakhtaStatus = async (vakhta: any) => {
   try {
     await $fetch(`http://localhost:3001/api/admin/vakhtas/${vakhta.id}`, {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${authStore.token}` },
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      },
       body: {
         ...vakhta,
         is_active: !vakhta.is_active
@@ -474,19 +950,90 @@ const exportData = () => {
   showNotification('Экспорт', 'Функция экспорта в разработке', 'info')
 }
 
-const handleSlonCreated = () => {
-  showCreateSlon.value = false
-  refreshData()
+// Вспомогательные функции для активности
+const getActivityIcon = (status: string) => {
+  const icons: any = {
+    active: '✅',
+    completed: '🏁',
+    cancelled: '❌'
+  }
+  return icons[status] || '📝'
 }
 
-const handleVakhtaCreated = () => {
-  showCreateVakhta.value = false
-  refreshData()
+const getActivityText = (activity: any) => {
+  const statusText: any = {
+    active: 'записался на',
+    completed: 'завершил',
+    cancelled: 'отменил'
+  }
+  return `${activity.borov_name} ${statusText[activity.status] || 'обновил'} специальность "${activity.specialty_title}" на предприятии "${activity.vakhta_title}"`
 }
 
-const handlePromoCreated = () => {
-  showCreatePromo.value = false
-  refreshData()
+const formatTime = (dateString: string) => {
+  return new Date(dateString).toLocaleString('ru-RU')
+}
+
+const formatSalary = (salary: number) => {
+  return new Intl.NumberFormat('ru-RU').format(salary)
+}
+
+const editSpecialty = (specialty: any) => {
+  // TODO: Реализовать редактирование специальности
+  console.log('Edit specialty:', specialty)
+  showNotification('Редактирование', 'Функция редактирования в разработке', 'info')
+}
+
+// Вспомогательная функция для обрезки текста
+const truncateText = (text: string, length: number) => {
+  if (!text) return ''
+  return text.length > length ? text.substring(0, length) + '...' : text
+}
+
+// Reset functions
+const resetNewSlon = () => {
+  newSlon.value = {
+    username: '',
+    display_name: '',
+    password: '',
+    contact_email: '',
+    contact_phone: ''
+  }
+}
+
+const resetNewVakhta = () => {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const in30Days = new Date()
+  in30Days.setDate(in30Days.getDate() + 30)
+
+  newVakhta.value = {
+    title: '',
+    description: '',
+    location: '',
+    total_places: 10,
+    start_date: tomorrow.toISOString().split('T')[0],
+    end_date: in30Days.toISOString().split('T')[0],
+    requirements: '',
+    conditions: ''
+  }
+}
+
+const resetNewSpecialty = () => {
+  newSpecialty.value = {
+    title: '',
+    description: '',
+    requirements: '',
+    total_places: 10,
+    salary: 5000
+  }
+}
+
+const resetNewPromo = () => {
+  newPromo.value = {
+    code: '',
+    description: '',
+    slon_id: ''
+  }
 }
 
 // Utility functions
@@ -528,6 +1075,7 @@ const showNotification = (title: string, message: string, type: 'success' | 'err
 // Lifecycle
 onMounted(async () => {
   await loadAdminDashboard()
+  resetNewVakhta() // Устанавливаем даты по умолчанию для вахты
 })
 </script>
 
@@ -845,14 +1393,168 @@ onMounted(async () => {
   gap: 8px;
 }
 
-.enterprises-grid,
+.enterprises-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.enterprise-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.enterprise-header {
+  padding: 25px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: #f8f9fa;
+  transition: background-color 0.3s ease;
+}
+
+.enterprise-header:hover {
+  background: #e9ecef;
+}
+
+.enterprise-main {
+  flex: 1;
+}
+
+.enterprise-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.enterprise-title h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.location, .dates, .workers {
+  margin: 5px 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.enterprise-actions {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.specialties-section {
+  border-top: 1px solid #e9ecef;
+  padding: 25px;
+  background: #fafafa;
+}
+
+.specialties-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.specialties-header h4 {
+  margin: 0;
+  color: #333;
+}
+
+.specialties-count {
+  background: #007bff;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.no-specialties {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  background: white;
+  border-radius: 10px;
+  border: 2px dashed #dee2e6;
+}
+
+.specialties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 15px;
+}
+
+.specialty-card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border-left: 4px solid #20c997;
+}
+
+.specialty-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.specialty-info {
+  flex: 1;
+}
+
+.specialty-info h5 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.specialty-description {
+  margin: 8px 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.specialty-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.salary {
+  color: #28a745;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.places, .requirements {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.specialty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  min-width: 120px;
+}
+
 .promocodes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
 }
 
-.enterprise-card,
 .promocode-card {
   background: #f8f9fa;
   border-radius: 10px;
@@ -860,7 +1562,6 @@ onMounted(async () => {
   border: 1px solid #e9ecef;
 }
 
-.enterprise-header,
 .promo-header {
   display: flex;
   justify-content: space-between;
@@ -868,7 +1569,6 @@ onMounted(async () => {
   margin-bottom: 15px;
 }
 
-.enterprise-header h3,
 .promo-header h3 {
   margin: 0;
   color: #333;
@@ -883,14 +1583,12 @@ onMounted(async () => {
   font-size: 0.8rem;
 }
 
-.enterprise-info p,
 .promo-info p {
   margin: 8px 0;
   color: #666;
   font-size: 0.9rem;
 }
 
-.enterprise-actions,
 .promo-actions {
   margin-top: 15px;
 }
@@ -902,6 +1600,66 @@ onMounted(async () => {
   font-weight: bold;
   color: #007bff;
   margin-bottom: 4px;
+}
+
+/* Activity List */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #007bff;
+}
+
+.activity-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.activity-header strong {
+  color: #333;
+  font-size: 1rem;
+}
+
+.activity-time {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.activity-text {
+  margin: 0 0 10px 0;
+  color: #555;
+  line-height: 1.4;
+}
+
+.activity-details {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.detail {
+  font-size: 0.8rem;
+  color: #666;
 }
 
 /* Buttons */
@@ -1039,7 +1797,89 @@ onMounted(async () => {
   }
 }
 
-/* Responsive */
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 10px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-form {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* Адаптивность */
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
@@ -1069,7 +1909,36 @@ onMounted(async () => {
     align-items: flex-start;
   }
 
-  .enterprises-grid,
+  .enterprise-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .enterprise-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .specialties-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .specialties-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .specialty-header {
+    flex-direction: column;
+  }
+
+  .specialty-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
   .promocodes-grid {
     grid-template-columns: 1fr;
   }
@@ -1081,6 +1950,17 @@ onMounted(async () => {
   .data-table th,
   .data-table td {
     padding: 8px;
+  }
+
+  .activity-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .activity-details {
+    flex-direction: column;
+    gap: 5px;
   }
 }
 </style>
