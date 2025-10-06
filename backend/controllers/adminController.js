@@ -520,6 +520,138 @@ const getAdminStats = async (req, res) => {
   }
 };
 
+// В adminController.js нет методов deleteSpecialty
+// Нужно добавить:
+const deleteSpecialty = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем активных работников
+    const activeWorkers = await pool.query(
+      'SELECT COUNT(*) FROM borov_specialty_history WHERE specialty_id = $1 AND status = $2',
+      [id, 'active']
+    );
+
+    if (parseInt(activeWorkers.rows[0].count) > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete specialty with active workers'
+      });
+    }
+
+    const result = await pool.query(
+      'DELETE FROM specialties WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Specialty not found' });
+    }
+
+    res.json({ message: 'Specialty deleted successfully' });
+  } catch (error) {
+    console.error('Delete specialty error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// В adminController.js и slonController.js нет deletePromoCode
+// Нужно добавить:
+const deletePromoCode = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем привязанных боровов
+    const borovsCheck = await pool.query(
+      'SELECT COUNT(*) FROM borovs WHERE promo_code_id = $1',
+      [id]
+    );
+
+    if (parseInt(borovsCheck.rows[0].count) > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete promo code with registered borovs'
+      });
+    }
+
+    const result = await pool.query(
+      'DELETE FROM promo_codes WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Promo code not found' });
+    }
+
+    res.json({ message: 'Promo code deleted successfully' });
+  } catch (error) {
+    console.error('Delete promo code error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const deleteSlon = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем есть ли промокоды у слона
+    const promoCodesCheck = await pool.query(
+      'SELECT COUNT(*) FROM promo_codes WHERE slon_id = $1',
+      [id]
+    );
+
+    if (parseInt(promoCodesCheck.rows[0].count) > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete slon with active promo codes'
+      });
+    }
+
+    const result = await pool.query(
+      'DELETE FROM slons WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Slon not found' });
+    }
+
+    res.json({ message: 'Slon deleted successfully' });
+  } catch (error) {
+    console.error('Delete slon error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const deleteVakhta = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Проверяем активных работников
+    const activeWorkers = await pool.query(
+      'SELECT COUNT(*) FROM borov_vakhta_history WHERE vakhta_id = $1 AND status = $2',
+      [id, 'active']
+    );
+
+    if (parseInt(activeWorkers.rows[0].count) > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete vakhta with active workers'
+      });
+    }
+
+    const result = await pool.query(
+      'DELETE FROM vakhtas WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Vakhta not found' });
+    }
+
+    res.json({ message: 'Vakhta deleted successfully' });
+  } catch (error) {
+    console.error('Delete vakhta error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Admin dashboard
 const getAdminDashboard = async (req, res) => {
   try {
@@ -599,5 +731,9 @@ module.exports = {
   getAllSpecialties,
   getBorovActivity,
   getVakhtasWithSpecialties,
-  createSpecialty
+  createSpecialty,
+  deleteSpecialty,
+  deletePromoCode,
+  deleteSlon,
+  deleteVakhta
 };

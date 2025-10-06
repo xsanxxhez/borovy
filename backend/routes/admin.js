@@ -14,7 +14,11 @@ const {
   getAllSpecialties,
   getBorovActivity,
   getVakhtasWithSpecialties,
-  createSpecialty
+  createSpecialty,
+  deleteSpecialty,
+    deletePromoCode,
+    deleteSlon,
+    deleteVakhta
 } = require('../controllers/adminController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validateSlon, validateVakhta } = require('../middleware/validation');
@@ -70,7 +74,11 @@ router.get('/activity/borovs', getBorovActivity);
 
 // Vakhtas with specialties
 router.get('/vakhtas-with-specialties', getVakhtasWithSpecialties);
-
+// Добавить новые роуты
+router.delete('/slons/:id', deleteSlon);
+router.delete('/vakhtas/:id', deleteVakhta);
+router.delete('/specialties/:id', deleteSpecialty);
+router.delete('/promocodes/:id', deletePromoCode);
 
 
 

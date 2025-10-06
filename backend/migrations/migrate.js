@@ -135,6 +135,11 @@ const createTables = async () => {
     `);
     console.log('✅ borov_stats table created');
 
+    ALTER TABLE slons ADD COLUMN deleted_at TIMESTAMP;
+    ALTER TABLE vakhtas ADD COLUMN deleted_at TIMESTAMP;
+    ALTER TABLE specialties ADD COLUMN deleted_at TIMESTAMP;
+    ALTER TABLE promo_codes ADD COLUMN deleted_at TIMESTAMP;
+
     // Add indexes for better performance
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_specialties_vakhta_id ON specialties(vakhta_id);

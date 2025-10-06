@@ -66,12 +66,48 @@ const validateVakhta = (req, res, next) => {
 
 const validateBorov = (req, res, next) => {
   const schema = Joi.object({
-    email: Joi.string().email().required(),
-    phone: Joi.string().min(10).max(20).required(),
-    password: Joi.string().min(6).required(),
-    full_name: Joi.string().min(2).max(200).required(),
-    birth_date: Joi.date().max(new Date().setFullYear(new Date().getFullYear() - 18)).required(),
-    promo_code: Joi.string().required()
+    email: Joi.string().email().required().messages({
+      'string.email': 'Invalid email format',
+      'any.required': 'Email is required'
+    }),
+    phone: Joi.string().min(10).max(20).required().messages({
+      'string.min': 'Phone must be at least 10 characters',
+      'string.max': 'Phone must not exceed 20 characters',
+      'any.required': 'Phone is required'
+    }),
+    password: Joi.string().min(6).required().messages({
+      'string.min': 'Password must be at least 6 characters',
+      'any.required': 'Password is required'
+    }),
+    full_name: Joi.string().min(2).max(200).required().messages({
+      'string.min': 'Full name must be at least 2 characters',
+      'string.max': 'Full name must not exceed 200 characters',
+      'any.required': 'Full name is required'
+    }),
+    birth_date: Joi.date().max(new Date().setFullYear(new Date().getFullYear() - 18)).required().messages({
+      'date.max': 'Must be at least 18 years old',
+      'any.required': 'Birth date is required'
+    }),
+    promo_code: Joi.string().required().messages({
+      'any.required': 'Promo code is required'
+    })
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json({
+      error: error.details[0].message
+    });
+  }
+  next();
+};
+
+
+const validateSlonUpdate = (req, res, next) => {
+  const schema = Joi.object({
+    display_name: Joi.string().min(2).max(100).required(),
+    contact_phone: Joi.string().allow('').optional(),
+    contact_email: Joi.string().email().allow('').optional()
   });
 
   const { error } = schema.validate(req.body);
@@ -85,5 +121,6 @@ module.exports = {
   validateSlon,
   validatePromoCode,
   validateVakhta,
-  validateBorov
+  validateBorov,
+  validateSlonUpdate
 };

@@ -1,5 +1,3 @@
-[file name]: default.vue
-[file content begin]
 <template>
   <div>
     <!-- Десктопная навигация -->
@@ -478,4 +476,3 @@ main.slon-mobile-layout {
   }
 }
 </style>
-[file content end]

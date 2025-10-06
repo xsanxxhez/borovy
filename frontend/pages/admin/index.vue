@@ -70,10 +70,53 @@
           <span class="action-text">Новое Предприятие</span>
         </button>
 
+        <button @click="showCreatePromo = true" class="action-card">
+          <span class="action-icon">🎫</span>
+          <span class="action-text">Новый Промокод</span>
+        </button>
+
         <button @click="exportData" class="action-card">
           <span class="action-icon">📊</span>
           <span class="action-text">Экспорт данных</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Модальное окно подтверждения удаления -->
+    <div v-if="showDeleteModal" class="modal-overlay">
+      <div class="modal-content delete-modal">
+        <div class="modal-header">
+          <h3>⚠️ Подтверждение удаления</h3>
+          <button @click="closeDeleteModal" class="close-btn">✕</button>
+        </div>
+
+        <div class="delete-content">
+          <div class="delete-icon">🗑️</div>
+          <div class="delete-text">
+            <h4>{{ deleteModal.title }}</h4>
+            <p>{{ deleteModal.message }}</p>
+
+            <!-- Предупреждение о зависимых данных -->
+            <div v-if="deleteModal.warning" class="delete-warning">
+              <span class="warning-icon">⚠️</span>
+              {{ deleteModal.warning }}
+            </div>
+          </div>
+        </div>
+
+        <div class="delete-actions">
+          <button @click="closeDeleteModal" class="btn btn-outline">
+            Отмена
+          </button>
+          <button
+            @click="confirmDelete"
+            :disabled="deleting"
+            :class="['btn', 'btn-danger', { 'loading': deleting }]"
+          >
+            <span v-if="deleting" class="loading-spinner"></span>
+            {{ deleting ? 'Удаление...' : 'Удалить' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -319,8 +362,25 @@
                       <button
                         @click="toggleSlonStatus(slon)"
                         :class="['btn', 'btn-sm', slon.is_active ? 'btn-warning' : 'btn-success']"
+                        title="Переключить статус"
                       >
                         {{ slon.is_active ? '⏸️' : '▶️' }}
+                      </button>
+                      <button
+                        v-if="slon.borovs_count === 0 && slon.promo_codes_count === 0"
+                        @click="openDeleteModal('slon', slon)"
+                        class="btn btn-danger btn-sm"
+                        title="Удалить слона"
+                      >
+                        🗑️
+                      </button>
+                      <button
+                        v-else
+                        class="btn btn-disabled btn-sm"
+                        title="Нельзя удалить - есть зависимые данные"
+                        disabled
+                      >
+                        🔒
                       </button>
                     </div>
                   </td>
@@ -364,25 +424,35 @@
                   <button
                     @click.stop="showCreateSpecialty(vakhta)"
                     class="btn btn-success btn-sm"
+                    title="Добавить специальность"
                   >
                     ➕ Специальность
                   </button>
                   <button
                     @click.stop="toggleVakhtaStatus(vakhta)"
                     :class="['btn', 'btn-sm', vakhta.is_active ? 'btn-warning' : 'btn-success']"
+                    title="Переключить статус"
                   >
                     {{ vakhta.is_active ? '⏸️ Стоп' : '▶️ Старт' }}
                   </button>
                   <button
+                    @click.stop="openDeleteModal('vakhta', vakhta)"
+                    class="btn btn-danger btn-sm"
+                    title="Удалить предприятие"
+                  >
+                    🗑️
+                  </button>
+                  <button
                     @click.stop="toggleVakhtaExpansion(vakhta.id)"
                     class="btn btn-outline btn-sm"
+                    title="Показать/скрыть специальности"
                   >
                     {{ expandedVakhtas.includes(vakhta.id) ? '▲' : '▼' }}
                   </button>
                 </div>
               </div>
 
-              <!-- Специальности предприятия (раскрывающийся список) -->
+              <!-- Специальности предприятия -->
               <div v-if="expandedVakhtas.includes(vakhta.id)" class="specialties-section">
                 <div class="specialties-header">
                   <h4>👷 Специальности предприятия</h4>
@@ -428,14 +498,23 @@
                         <button
                           @click="editSpecialty(specialty)"
                           class="btn btn-outline btn-sm"
+                          title="Редактировать"
                         >
                           ✏️
                         </button>
                         <button
                           @click="toggleSpecialtyStatus(specialty)"
                           :class="['btn', 'btn-sm', specialty.is_active ? 'btn-warning' : 'btn-success']"
+                          title="Переключить статус"
                         >
                           {{ specialty.is_active ? '⏸️' : '▶️' }}
+                        </button>
+                        <button
+                          @click="openDeleteModal('specialty', specialty)"
+                          class="btn btn-danger btn-sm"
+                          title="Удалить специальность"
+                        >
+                          🗑️
                         </button>
                       </div>
                     </div>
@@ -463,9 +542,18 @@
             >
               <div class="promo-header">
                 <h3>{{ promo.code }}</h3>
-                <span class="usage-badge">
-                  Использован {{ promo.borovs_count }} раз
-                </span>
+                <div class="promo-header-actions">
+                  <span class="usage-badge">
+                    Использован {{ promo.borovs_count }} раз
+                  </span>
+                  <button
+                    @click="openDeleteModal('promo', promo)"
+                    class="btn btn-danger btn-sm"
+                    title="Удалить промокод"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
 
               <div class="promo-info">
@@ -614,7 +702,17 @@ const creatingVakhta = ref(false)
 const creatingPromo = ref(false)
 const lastUpdated = ref('')
 
-// Новые данные для иерархического отображения
+// Новые данные для удаления
+const showDeleteModal = ref(false)
+const deleting = ref(false)
+const deleteModal = ref({
+  type: '',
+  data: null,
+  title: '',
+  message: '',
+  warning: ''
+})
+
 const vakhtasWithSpecialties = ref([])
 const borovActivity = ref([])
 const expandedVakhtas = ref([])
@@ -663,7 +761,7 @@ const notification = ref({
   icon: '✅'
 })
 
-// Обновляем tabs - убираем отдельную вкладку specialties
+// Tabs
 const tabs = [
   { id: 'slons', name: 'Слоны', icon: '🐘' },
   { id: 'enterprises', name: 'Предприятия', icon: '🏗️' },
@@ -686,7 +784,105 @@ const getTabCount = (tabId: string) => {
   }
 }
 
-// Methods
+// Methods - Функции для удаления
+const openDeleteModal = (type: string, data: any) => {
+  const modalConfig = {
+    slon: {
+      title: `Удаление Слона`,
+      message: `Вы уверены, что хотите удалить слона "${data.display_name}"?`,
+      warning: data.borovs_count > 0 ? `У этого слона есть ${data.borovs_count} зарегистрированных боровов. Удаление невозможно.` :
+               data.promo_codes_count > 0 ? `У этого слона есть ${data.promo_codes_count} промокодов. Удаление невозможно.` : ''
+    },
+    vakhta: {
+      title: `Удаление Предприятия`,
+      message: `Вы уверены, что хотите удалить предприятие "${data.title}"?`,
+      warning: data.current_workers > 0 ? `На предприятии работает ${data.current_workers} боровов. Удаление невозможно.` : ''
+    },
+    specialty: {
+      title: `Удаление Специальности`,
+      message: `Вы уверены, что хотите удалить специальность "${data.title}"?`,
+      warning: data.current_workers > 0 ? `На этой специальности работает ${data.current_workers} боровов. Удаление невозможно.` : ''
+    },
+    promo: {
+      title: `Удаление Промокода`,
+      message: `Вы уверены, что хотите удалить промокод "${data.code}"?`,
+      warning: data.borovs_count > 0 ? `Этот промокод использован ${data.borovs_count} раз. Удаление невозможно.` : ''
+    }
+  }
+
+  const config = modalConfig[type]
+
+  deleteModal.value = {
+    type,
+    data,
+    title: config.title,
+    message: config.message,
+    warning: config.warning
+  }
+
+  // Показываем модальное окно только если нет предупреждений
+  showDeleteModal.value = !config.warning
+}
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  deleting.value = false
+  deleteModal.value = {
+    type: '',
+    data: null,
+    title: '',
+    message: '',
+    warning: ''
+  }
+}
+
+const confirmDelete = async () => {
+  try {
+    deleting.value = true
+
+    const { type, data } = deleteModal.value
+    let endpoint = ''
+    let successMessage = ''
+
+    switch (type) {
+      case 'slon':
+        endpoint = `http://localhost:3001/api/admin/slons/${data.id}`
+        successMessage = `Слон "${data.display_name}" успешно удален`
+        break
+      case 'vakhta':
+        endpoint = `http://localhost:3001/api/admin/vakhtas/${data.id}`
+        successMessage = `Предприятие "${data.title}" успешно удалено`
+        break
+      case 'specialty':
+        endpoint = `http://localhost:3001/api/admin/specialties/${data.id}`
+        successMessage = `Специальность "${data.title}" успешно удалена`
+        break
+      case 'promo':
+        endpoint = `http://localhost:3001/api/admin/promocodes/${data.id}`
+        successMessage = `Промокод "${data.code}" успешно удален`
+        break
+    }
+
+    await $fetch(endpoint, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+
+    showNotification('Успешное удаление', successMessage, 'success')
+    closeDeleteModal()
+    await refreshData()
+
+  } catch (error: any) {
+    console.error('Error deleting:', error)
+    showNotification('Ошибка удаления', error.data?.error || 'Не удалось удалить', 'error')
+  } finally {
+    deleting.value = false
+  }
+}
+
+// Существующие методы
 const loadAdminDashboard = async () => {
   try {
     loading.value = true
@@ -700,7 +896,6 @@ const loadAdminDashboard = async () => {
     dashboardData.value = response
     lastUpdated.value = new Date().toLocaleTimeString('ru-RU')
 
-    // Загружаем предприятия со специальностями и активность
     await Promise.all([
       loadVakhtasWithSpecialties(),
       loadBorovActivity()
@@ -1391,6 +1586,13 @@ onMounted(async () => {
 .action-buttons {
   display: flex;
   gap: 8px;
+  align-items: center;
+}
+
+.promo-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .enterprises-container {
@@ -1546,7 +1748,7 @@ onMounted(async () => {
   flex-direction: column;
   gap: 8px;
   align-items: flex-end;
-  min-width: 120px;
+  min-width: 140px;
 }
 
 .promocodes-grid {
@@ -1704,6 +1906,21 @@ onMounted(async () => {
   background: #e0a800;
 }
 
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .btn-outline {
   background: transparent;
   border: 1px solid #6c757d;
@@ -1723,6 +1940,13 @@ onMounted(async () => {
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-disabled {
+  background: #6c757d;
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Notification */
@@ -1821,6 +2045,10 @@ onMounted(async () => {
   overflow-y: auto;
 }
 
+.delete-modal {
+  max-width: 500px;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -1877,6 +2105,73 @@ onMounted(async () => {
   gap: 10px;
   justify-content: flex-end;
   margin-top: 20px;
+}
+
+/* Новые стили для модального окна удаления */
+.delete-content {
+  padding: 30px;
+  text-align: center;
+}
+
+.delete-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.delete-text h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.delete-text p {
+  margin: 0 0 20px 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.delete-warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  text-align: left;
+}
+
+.warning-icon {
+  margin-right: 8px;
+  font-size: 1.1rem;
+}
+
+.delete-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+/* Анимация загрузки */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.btn.loading {
+  pointer-events: none;
 }
 
 /* Адаптивность */
@@ -1937,6 +2232,7 @@ onMounted(async () => {
     width: 100%;
     flex-direction: row;
     justify-content: flex-end;
+    min-width: auto;
   }
 
   .promocodes-grid {
@@ -1961,6 +2257,25 @@ onMounted(async () => {
   .activity-details {
     flex-direction: column;
     gap: 5px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .promo-header-actions {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .enterprise-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .delete-actions {
+    flex-direction: column;
   }
 }
 </style>
