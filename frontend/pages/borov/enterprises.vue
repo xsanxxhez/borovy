@@ -1,3 +1,5 @@
+[file name]: enterprises.vue
+[file content begin]
 <template>
   <div class="enterprises-page">
     <!-- Header -->
@@ -16,6 +18,20 @@
           <span class="stat-number">{{ totalSpecialties }}</span>
           <span class="stat-label">вакансий</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Current Work Banner -->
+    <div v-if="currentWork.type !== 'none'" class="current-work-banner">
+      <div class="banner-content">
+        <div class="banner-icon">💼</div>
+        <div class="banner-text">
+          <strong>У вас активная работа</strong>
+          <p>Вы работаете: {{ currentWork.work.specialty_title || currentWork.work.vakhta_title }}</p>
+        </div>
+        <button @click="leaveWork" class="btn btn-warning btn-sm">
+          🏁 Завершить
+        </button>
       </div>
     </div>
 
@@ -44,17 +60,10 @@
           <option value="5000">от 5,000 ₽</option>
           <option value="6000">от 6,000 ₽</option>
         </select>
-      </div>
-    </div>
 
-    <!-- Active Work Warning -->
-    <div v-if="hasActiveWork" class="warning-banner">
-      <div class="warning-content">
-        <span class="warning-icon">⚠️</span>
-        <div class="warning-text">
-          <strong>У вас уже есть активная работа</strong>
-          <p>Вы не можете записаться на новую вахту пока не завершите текущую</p>
-        </div>
+        <button @click="clearFilters" class="btn btn-outline btn-sm">
+          🗑️ Очистить
+        </button>
       </div>
     </div>
 
@@ -121,8 +130,16 @@
               v-for="specialty in enterprise.specialties"
               :key="specialty.id"
               class="specialty-card"
-              :class="{ 'few-places': specialty.free_places <= 3, 'no-places': specialty.free_places === 0 }"
+              :class="{
+                'few-places': specialty.free_places <= 3,
+                'no-places': specialty.free_places === 0,
+                'joined': specialty.is_joined
+              }"
             >
+              <div v-if="specialty.is_joined" class="joined-badge">
+                ✅ Вы записаны
+              </div>
+
               <div class="specialty-header">
                 <div class="specialty-main">
                   <h5>{{ specialty.title }}</h5>
@@ -150,19 +167,27 @@
 
                 <div class="specialty-actions">
                   <button
-                    v-if="!hasActiveWork && specialty.free_places > 0"
+                    v-if="currentWork.type === 'none' && specialty.free_places > 0 && !specialty.is_joined"
                     @click="applyForSpecialty(specialty)"
                     :disabled="applyingForSpecialty === specialty.id"
-                    class="btn btn-primary"
+                    class="btn btn-primary btn-large"
                   >
                     <span v-if="applyingForSpecialty === specialty.id" class="btn-spinner"></span>
                     {{ applyingForSpecialty === specialty.id ? 'Записываем...' : '📝 Записаться' }}
                   </button>
 
                   <button
-                    v-else-if="hasActiveWork"
+                    v-else-if="specialty.is_joined"
+                    @click="leaveCurrentWork"
+                    class="btn btn-warning btn-large"
+                  >
+                    🏁 Выйти
+                  </button>
+
+                  <button
+                    v-else-if="currentWork.type !== 'none'"
                     disabled
-                    class="btn btn-disabled"
+                    class="btn btn-disabled btn-large"
                   >
                     ❌ Уже работаете
                   </button>
@@ -170,7 +195,7 @@
                   <button
                     v-else
                     disabled
-                    class="btn btn-disabled"
+                    class="btn btn-disabled btn-large"
                   >
                     ❌ Нет мест
                   </button>
@@ -180,6 +205,18 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Success Notification -->
+    <div v-if="showSuccess" class="notification success">
+      <div class="notification-content">
+        <span class="notification-icon">✅</span>
+        <div class="notification-text">
+          <strong>Успешно записались на работу!</strong>
+          <p>Вы записаны на специальность "{{ joinedSpecialtyTitle }}"</p>
+        </div>
+      </div>
+      <button @click="showSuccess = false" class="notification-close">✕</button>
     </div>
   </div>
 </template>
@@ -191,7 +228,9 @@ const enterprises = ref([])
 const expandedEnterprise = ref(null)
 const loading = ref(false)
 const applyingForSpecialty = ref(null)
-const hasActiveWork = ref(false)
+const showSuccess = ref(false)
+const joinedSpecialtyTitle = ref('')
+const currentWork = ref({ type: 'none', work: null })
 
 const filters = reactive({
   search: '',
@@ -200,22 +239,21 @@ const filters = reactive({
 })
 
 // Загрузка предприятий
-// Загрузка предприятий
 const loadEnterprises = async () => {
   try {
     loading.value = true
 
-    // Загружаем предприятия со специальностями - правильный URL
+    // Загружаем предприятия со специальностями
     const response = await $fetch('http://localhost:3001/api/vakhta', {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
     enterprises.value = response
 
-    // Проверяем активную работу
-    const mySpecialties = await $fetch('http://localhost:3001/api/borov/specialties/my', {
+    // Загружаем текущую работу
+    const workResponse = await $fetch('http://localhost:3001/api/borov/current-work', {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    hasActiveWork.value = mySpecialties.some((s: any) => s.status === 'active')
+    currentWork.value = workResponse
 
   } catch (error) {
     console.error('Error loading enterprises:', error)
@@ -283,11 +321,16 @@ const applyForSpecialty = async (specialty: any) => {
       body: { specialty_id: specialty.id }
     })
 
-    // Показываем уведомление об успехе
-    alert(`🎉 Вы успешно записались на вакансию "${specialty.title}"!`)
+    joinedSpecialtyTitle.value = specialty.title
+    showSuccess.value = true
 
     // Обновляем данные
     await loadEnterprises()
+
+    // Автоматически скрываем уведомление через 5 секунд
+    setTimeout(() => {
+      showSuccess.value = false
+    }, 5000)
 
   } catch (error: any) {
     console.error('Error applying for specialty:', error)
@@ -295,6 +338,36 @@ const applyForSpecialty = async (specialty: any) => {
   } finally {
     applyingForSpecialty.value = null
   }
+}
+
+const leaveWork = async () => {
+  try {
+    if (!confirm('Вы уверены, что хотите завершить текущую работу?')) return
+
+    let endpoint = ''
+    if (currentWork.value.type === 'specialty') {
+      endpoint = 'http://localhost:3001/api/borov/specialties/leave'
+    } else if (currentWork.value.type === 'vakhta') {
+      endpoint = 'http://localhost:3001/api/borov/vakhtas/leave'
+    }
+
+    if (endpoint) {
+      await $fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authStore.token}` }
+      })
+
+      await loadEnterprises()
+      showNotification('Работа завершена', 'success')
+    }
+  } catch (error: any) {
+    console.error('Error leaving work:', error)
+    showNotification(error.data?.error || 'Ошибка', 'error')
+  }
+}
+
+const leaveCurrentWork = () => {
+  leaveWork()
 }
 
 const clearFilters = () => {
@@ -324,6 +397,11 @@ const getPlacesClass = (freePlaces: number) => {
   return 'available'
 }
 
+const showNotification = (message: string, type: string) => {
+  // TODO: Реализовать систему уведомлений
+  console.log(`${type}: ${message}`)
+}
+
 onMounted(() => {
   loadEnterprises()
 })
@@ -336,6 +414,7 @@ onMounted(() => {
   padding: 20px;
 }
 
+/* Header */
 .page-header {
   background: white;
   padding: 30px;
@@ -382,6 +461,42 @@ onMounted(() => {
   text-transform: uppercase;
 }
 
+/* Current Work Banner */
+.current-work-banner {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  border: 1px solid #ffc107;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.banner-icon {
+  font-size: 2rem;
+}
+
+.banner-text {
+  flex: 1;
+}
+
+.banner-text strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #856404;
+}
+
+.banner-text p {
+  margin: 0;
+  color: #856404;
+  opacity: 0.8;
+}
+
+/* Filters */
 .filters-section {
   background: white;
   padding: 25px;
@@ -413,6 +528,7 @@ onMounted(() => {
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .filter-select {
@@ -423,37 +539,8 @@ onMounted(() => {
   min-width: 180px;
 }
 
-.warning-banner {
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 25px;
-}
-
-.warning-content {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.warning-icon {
-  font-size: 1.5rem;
-}
-
-.warning-text strong {
-  color: #856404;
-  display: block;
-  margin-bottom: 5px;
-}
-
-.warning-text p {
-  margin: 0;
-  color: #856404;
-  opacity: 0.8;
-}
-
-.loading-state {
+/* Loading, Empty States */
+.loading-state, .empty-state {
   text-align: center;
   padding: 60px 20px;
   color: #666;
@@ -469,17 +556,11 @@ onMounted(() => {
   margin: 0 auto 20px;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 .empty-state {
-  text-align: center;
-  padding: 80px 20px;
   background: white;
   border-radius: 20px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  padding: 80px 20px;
 }
 
 .empty-icon {
@@ -488,16 +569,12 @@ onMounted(() => {
   opacity: 0.7;
 }
 
-.empty-state h3 {
-  margin-bottom: 15px;
-  color: #333;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.empty-state p {
-  margin-bottom: 25px;
-  color: #666;
-}
-
+/* Enterprises List */
 .enterprises-list {
   display: flex;
   flex-direction: column;
@@ -588,6 +665,7 @@ onMounted(() => {
   padding: 5px;
 }
 
+/* Specialties Section */
 .specialties-section {
   border-top: 1px solid #e9ecef;
   padding: 25px;
@@ -615,10 +693,11 @@ onMounted(() => {
 
 .specialty-card {
   background: white;
-  padding: 20px;
+  padding: 25px;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   border-left: 4px solid #20c997;
+  position: relative;
 }
 
 .specialty-card.few-places {
@@ -628,6 +707,23 @@ onMounted(() => {
 .specialty-card.no-places {
   border-left-color: #dc3545;
   opacity: 0.7;
+}
+
+.specialty-card.joined {
+  border-left-color: #28a745;
+  background: linear-gradient(135deg, #f8fff8, #e8f5e8);
+}
+
+.joined-badge {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .specialty-header {
@@ -691,13 +787,14 @@ onMounted(() => {
 }
 
 .specialty-actions {
-  min-width: 140px;
+  min-width: 160px;
 }
 
+/* Buttons */
 .btn {
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   font-size: 14px;
@@ -717,10 +814,42 @@ onMounted(() => {
   background: #0056b3;
 }
 
+.btn-warning {
+  background: #ffc107;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid #007bff;
+  color: #007bff;
+}
+
+.btn-outline:hover {
+  background: #007bff;
+  color: white;
+}
+
 .btn-disabled {
   background: #6c757d;
   color: white;
   cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+.btn-large {
+  padding: 15px 25px;
+  font-size: 1rem;
+  min-width: 140px;
+  justify-content: center;
 }
 
 .btn-spinner {
@@ -732,8 +861,93 @@ onMounted(() => {
   animation: spin 1s linear infinite;
 }
 
-/* Responsive */
+/* Notification */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  padding: 20px;
+  z-index: 1001;
+  animation: slideInRight 0.3s ease;
+  border-left: 4px solid #28a745;
+}
+
+.notification.success {
+  border-left-color: #28a745;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+}
+
+.notification-text strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.notification-text p {
+  margin: 0;
+  color: #666;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #6c757d;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile Responsive */
 @media (max-width: 768px) {
+  .enterprises-page {
+    padding: 15px;
+  }
+
+  .page-header {
+    padding: 20px;
+  }
+
+  .header-stats {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .filters-section {
+    padding: 20px;
+  }
+
+  .filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-select {
+    min-width: auto;
+  }
+
   .enterprise-header {
     flex-direction: column;
     gap: 15px;
@@ -752,12 +966,15 @@ onMounted(() => {
     width: 100%;
   }
 
-  .filter-controls {
-    flex-direction: column;
+  .specialty-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 
-  .filter-select {
-    min-width: auto;
+  .banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
   }
 
   .detail-item {
@@ -769,4 +986,20 @@ onMounted(() => {
     min-width: auto;
   }
 }
+
+@media (max-width: 480px) {
+  .header-content h1 {
+    font-size: 1.8rem;
+  }
+
+  .enterprise-meta {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .specialties-section {
+    padding: 20px;
+  }
+}
 </style>
+[file content end]
