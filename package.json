@@ -10,7 +10,14 @@
     "install:backend": "cd backend && npm install",
     "setup": "npm run install:backend && npm run migrate && npm run seed"
   },
-  "keywords": ["work", "organization", "platform"],
+  "keywords": [
+    "work",
+    "organization",
+    "platform"
+  ],
   "author": "Borovy Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "v-mask": "^2.3.0"
+  }
 }

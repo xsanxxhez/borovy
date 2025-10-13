@@ -1,5 +1,4 @@
-[file name]: enterprises.vue
-[file content begin]
+
 <template>
   <div class="enterprises-page">
     <!-- Header -->
@@ -115,97 +114,116 @@
           </div>
         </div>
 
-        <!-- Specialties List -->
         <div v-if="expandedEnterprise === enterprise.id" class="specialties-section">
-          <div class="specialties-header">
-            <h4>💼 Доступные вакансии</h4>
-          </div>
+                 <div class="specialties-header">
+                   <h4>💼 Доступные вакансии</h4>
+                 </div>
 
-          <div v-if="!enterprise.specialties || enterprise.specialties.length === 0" class="no-specialties">
-            <p>😔 На этом предприятии пока нет вакансий</p>
-          </div>
+                 <div v-if="!enterprise.specialties || enterprise.specialties.length === 0" class="no-specialties">
+                   <p>😔 На этом предприятии пока нет вакансий</p>
+                 </div>
 
-          <div v-else class="specialties-grid">
-            <div
-              v-for="specialty in enterprise.specialties"
-              :key="specialty.id"
-              class="specialty-card"
-              :class="{
-                'few-places': specialty.free_places <= 3,
-                'no-places': specialty.free_places === 0,
-                'joined': specialty.is_joined
-              }"
-            >
-              <div v-if="specialty.is_joined" class="joined-badge">
-                ✅ Вы записаны
-              </div>
+                 <div v-else class="specialties-grid">
+                   <div
+                     v-for="specialty in enterprise.specialties"
+                     :key="specialty.id"
+                     class="specialty-card"
+                     :class="{
+                       'few-places': specialty.free_places <= 3,
+                       'no-places': specialty.free_places === 0,
+                       'joined': specialty.is_joined
+                     }"
+                   >
+                     <div v-if="specialty.is_joined" class="joined-badge">
+                       ✅ Вы записаны
+                     </div>
 
-              <div class="specialty-header">
-                <div class="specialty-main">
-                  <h5>{{ specialty.title }}</h5>
-                  <p class="specialty-description" v-if="specialty.description">
-                    {{ specialty.description }}
-                  </p>
+                     <div class="specialty-header">
+                       <div class="specialty-main">
+                         <!-- ИЗМЕНЕНИЕ: Делаем заголовок кликабельным -->
+                         <h5>
+                           <nuxt-link
+                             :to="`/borov/specialties/${specialty.id}`"
+                             class="specialty-title-link"
+                           >
+                             {{ specialty.title }}
+                           </nuxt-link>
+                         </h5>
 
-                  <div class="specialty-details">
-                    <div class="detail-item">
-                      <span class="label">💰 Зарплата:</span>
-                      <span class="value salary">{{ formatSalary(specialty.salary) }}/день</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="label">👥 Места:</span>
-                      <span class="value places" :class="getPlacesClass(specialty.free_places)">
-                        {{ specialty.free_places }} из {{ specialty.total_places }}
-                      </span>
-                    </div>
-                    <div class="detail-item" v-if="specialty.requirements">
-                      <span class="label">📋 Требования:</span>
-                      <span class="value">{{ truncateText(specialty.requirements, 60) }}</span>
-                    </div>
-                  </div>
-                </div>
+                         <p class="specialty-description" v-if="specialty.description">
+                           {{ truncateText(specialty.description, 80) }}
+                         </p>
 
-                <div class="specialty-actions">
-                  <button
-                    v-if="currentWork.type === 'none' && specialty.free_places > 0 && !specialty.is_joined"
-                    @click="applyForSpecialty(specialty)"
-                    :disabled="applyingForSpecialty === specialty.id"
-                    class="btn btn-primary btn-large"
-                  >
-                    <span v-if="applyingForSpecialty === specialty.id" class="btn-spinner"></span>
-                    {{ applyingForSpecialty === specialty.id ? 'Записываем...' : '📝 Записаться' }}
-                  </button>
+                         <div class="specialty-details">
+                           <div class="detail-item">
+                             <span class="label">💰 Зарплата:</span>
+                             <span class="value salary">{{ formatSalary(specialty.salary) }}/день</span>
+                           </div>
+                           <div class="detail-item">
+                             <span class="label">👥 Места:</span>
+                             <span class="value places" :class="getPlacesClass(specialty.free_places)">
+                               {{ specialty.free_places }} из {{ specialty.total_places }}
+                             </span>
+                           </div>
+                           <div class="detail-item" v-if="specialty.requirements">
+                             <span class="label">📋 Требования:</span>
+                             <span class="value">{{ truncateText(specialty.requirements, 60) }}</span>
+                           </div>
+                         </div>
+                       </div>
 
-                  <button
-                    v-else-if="specialty.is_joined"
-                    @click="leaveCurrentWork"
-                    class="btn btn-warning btn-large"
-                  >
-                    🏁 Выйти
-                  </button>
+                       <div class="specialty-actions">
+                         <!-- ИЗМЕНЕНИЕ: Добавляем кнопку "Подробнее" -->
+                         <div class="action-buttons">
+                           <nuxt-link
+                             :to="`/borov/specialties/${specialty.id}`"
+                             class="btn btn-outline btn-sm"
+                           >
+                             👀 Подробнее
+                           </nuxt-link>
 
-                  <button
-                    v-else-if="currentWork.type !== 'none'"
-                    disabled
-                    class="btn btn-disabled btn-large"
-                  >
-                    ❌ Уже работаете
-                  </button>
+                           <button
+                             v-if="currentWork.type === 'none' && specialty.free_places > 0 && !specialty.is_joined"
+                             @click="applyForSpecialty(specialty)"
+                             :disabled="applyingForSpecialty === specialty.id"
+                             class="btn btn-primary btn-large"
+                           >
+                             <span v-if="applyingForSpecialty === specialty.id" class="btn-spinner"></span>
+                             {{ applyingForSpecialty === specialty.id ? 'Записываем...' : '📝 Записаться' }}
+                           </button>
 
-                  <button
-                    v-else
-                    disabled
-                    class="btn btn-disabled btn-large"
-                  >
-                    ❌ Нет мест
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                           <button
+                             v-else-if="specialty.is_joined"
+                             @click="leaveCurrentWork"
+                             class="btn btn-warning btn-large"
+                           >
+                             🏁 Выйти
+                           </button>
+
+                           <button
+                             v-else-if="currentWork.type !== 'none'"
+                             disabled
+                             class="btn btn-disabled btn-large"
+                           >
+                             ❌ Уже работаете
+                           </button>
+
+                           <button
+                             v-else
+                             disabled
+                             class="btn btn-disabled btn-large"
+                           >
+                             ❌ Нет мест
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
 
     <!-- Success Notification -->
     <div v-if="showSuccess" class="notification success">
@@ -247,7 +265,16 @@ const loadEnterprises = async () => {
     const response = await $fetch('http://localhost:3001/api/vakhta', {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
-    enterprises.value = response
+
+    // Обрабатываем данные для правильного отображения
+    enterprises.value = response.map(enterprise => ({
+      ...enterprise,
+      specialties: enterprise.specialties?.map(specialty => ({
+        ...specialty,
+        // Добавляем вычисляемое поле free_places если его нет
+        free_places: specialty.free_places || (specialty.total_places - (specialty.current_workers || 0))
+      })) || []
+    }))
 
     // Загружаем текущую работу
     const workResponse = await $fetch('http://localhost:3001/api/borov/current-work', {
@@ -1001,5 +1028,34 @@ onMounted(() => {
     padding: 20px;
   }
 }
+
+.specialty-title-link {
+  color: #333;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.specialty-title-link:hover {
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 160px;
+}
+
+/* Адаптируем кнопки для мобильных */
+@media (max-width: 768px) {
+  .action-buttons {
+    width: 100%;
+  }
+
+  .action-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
 </style>
-[file content end]

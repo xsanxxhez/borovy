@@ -1,38 +1,76 @@
-
 <template>
   <div class="borov-dashboard">
     <!-- Hero Section -->
     <div class="hero-section">
+      <div class="hero-background">
+        <div class="hero-glow"></div>
+        <div class="hero-particles">
+          <div class="particle" v-for="i in 15" :key="i" :style="particleStyle(i)"></div>
+        </div>
+      </div>
+
       <div class="hero-content">
         <div class="welcome-section">
-          <h1 class="welcome-title">👋 Привет, {{ authStore.user?.display_name }}!</h1>
-          <p class="welcome-subtitle">Управляй своей работой и находи новые возможности</p>
+          <div class="avatar-container">
+            <div class="user-avatar">
+              {{ getInitials(authStore.user?.display_name) }}
+            </div>
+            <div class="online-status"></div>
+          </div>
+
+          <div class="welcome-text">
+            <h1 class="welcome-title">
+              <span class="greeting">👋 Привет, {{ authStore.user?.display_name }}!</span>
+              <span class="status-dot" :class="currentWork.type"></span>
+            </h1>
+            <p class="welcome-subtitle">Управляй своими вахтами и находи новые возможности</p>
+          </div>
         </div>
 
         <div class="status-section">
           <div class="status-card" :class="currentWork.type">
+            <div class="status-glow"></div>
             <div class="status-icon">
               <span v-if="currentWork.type === 'specialty'">💼</span>
               <span v-else-if="currentWork.type === 'vakhta'">🏕️</span>
-              <span v-else>🆓</span>
+              <span v-else>🌟</span>
             </div>
             <div class="status-info">
+              <div class="status-badge" :class="currentWork.type">
+                {{ getStatusText(currentWork.type) }}
+              </div>
               <h3 v-if="currentWork.type === 'specialty'">
-                Работаю: {{ currentWork.work.specialty_title }}
+                {{ currentWork.work.specialty_title }}
               </h3>
               <h3 v-else-if="currentWork.type === 'vakhta'">
-                На вахте: {{ currentWork.work.vakhta_title }}
+                {{ currentWork.work.vakhta_title }}
               </h3>
-              <h3 v-else>Свободен</h3>
-              <p v-if="currentWork.type !== 'none'">
-                📍 {{ currentWork.work.location }} •
-                📅 до {{ formatDate(currentWork.work.end_date) }}
-              </p>
-              <p v-else>Готов к новой работе</p>
+              <h3 v-else>Готов к работе</h3>
+
+              <div class="status-details" v-if="currentWork.type !== 'none'">
+                <div class="detail-item">
+                  <span class="detail-icon">📍</span>
+                  <span>{{ currentWork.work.location }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-icon">📅</span>
+                  <span>до {{ formatDate(currentWork.work.end_date) }}</span>
+                </div>
+                <div class="contact-info" v-if="currentWork.type === 'vakhta'">
+                  <div class="contact-badge">
+                    📞 С вами скоро свяжутся
+                  </div>
+                </div>
+              </div>
+
+              <div class="status-details" v-else>
+                <p>Выберите вахту и начните работать</p>
+              </div>
             </div>
             <div class="status-actions" v-if="currentWork.type !== 'none'">
-              <button @click="leaveWork" class="btn btn-warning btn-sm">
-                🏁 Завершить
+              <button @click="leaveWork" class="btn btn-warning">
+                <span class="btn-icon">🚪</span>
+                Отменить запись
               </button>
             </div>
           </div>
@@ -42,79 +80,87 @@
 
     <!-- Quick Actions -->
     <div class="quick-actions-section">
-      <h2 class="section-title">⚡ Быстрые действия</h2>
+      <h2 class="section-title">
+        <span class="title-icon">⚡</span>
+        Быстрые действия
+      </h2>
       <div class="actions-grid">
-        <nuxt-link to="/borov/enterprises" class="action-card primary">
-          <div class="action-icon">🏗️</div>
+        <nuxt-link to="/borov/vakhtas" class="action-card primary" @click.native="trackAction('vakhtas')">
+          <div class="action-glow"></div>
+          <div class="action-icon">🏕️</div>
           <div class="action-content">
-            <h3>Предприятия</h3>
-            <p>Найди работу на предприятиях</p>
+            <h3>Записаться на вахту</h3>
+            <p>Найди подходящую вахту и начни работать</p>
           </div>
-          <div class="action-arrow">→</div>
+          <div class="action-arrow">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </nuxt-link>
 
-        <nuxt-link to="/borov/specialties" class="action-card secondary">
+        <nuxt-link to="/borov/specialties" class="action-card secondary" @click.native="trackAction('specialties')">
+          <div class="action-glow"></div>
           <div class="action-icon">💼</div>
           <div class="action-content">
-            <h3>Специальности</h3>
-            <p>Выбери свою профессию</p>
+            <h3>Мои специальности</h3>
+            <p>Управляй своими профессиями</p>
           </div>
-          <div class="action-arrow">→</div>
+          <div class="action-arrow">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </nuxt-link>
 
-        <nuxt-link to="/borov/history" class="action-card accent">
+        <nuxt-link to="/borov/history" class="action-card accent" @click.native="trackAction('history')">
+          <div class="action-glow"></div>
           <div class="action-icon">📊</div>
           <div class="action-content">
-            <h3>История</h3>
-            <p>Моя трудовая биография</p>
+            <h3>История работы</h3>
+            <p>Вся твоя рабочая биография</p>
           </div>
-          <div class="action-arrow">→</div>
+          <div class="action-arrow">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </nuxt-link>
 
-        <nuxt-link to="/borov/profile" class="action-card neutral">
+        <nuxt-link to="/borov/profile" class="action-card neutral" @click.native="trackAction('profile')">
+          <div class="action-glow"></div>
           <div class="action-icon">👤</div>
           <div class="action-content">
-            <h3>Профиль</h3>
-            <p>Личные данные и настройки</p>
+            <h3>Мой профиль</h3>
+            <p>Настройки и личная информация</p>
           </div>
-          <div class="action-arrow">→</div>
+          <div class="action-arrow">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
         </nuxt-link>
       </div>
     </div>
 
     <!-- Stats Overview -->
     <div class="stats-section">
-      <h2 class="section-title">📈 Моя статистика</h2>
+      <h2 class="section-title">
+        <span class="title-icon">📈</span>
+        Моя статистика
+      </h2>
       <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">🎯</div>
+        <div class="stat-card" v-for="stat in formattedStats" :key="stat.label">
+          <div class="stat-glow"></div>
+          <div class="stat-icon">{{ stat.icon }}</div>
           <div class="stat-content">
-            <div class="stat-number">{{ stats.completed_vakhtas || 0 }}</div>
-            <div class="stat-label">Завершено вахт</div>
+            <div class="stat-number" :style="{ color: stat.color }">
+              {{ stat.value }}
+            </div>
+            <div class="stat-label">{{ stat.label }}</div>
           </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">💼</div>
-          <div class="stat-content">
-            <div class="stat-number">{{ stats.completed_specialties || 0 }}</div>
-            <div class="stat-label">Завершено работ</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">📅</div>
-          <div class="stat-content">
-            <div class="stat-number">{{ stats.total_work_days || 0 }}</div>
-            <div class="stat-label">Рабочих дней</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">💰</div>
-          <div class="stat-content">
-            <div class="stat-number">{{ formatSalary(totalEarned) }}</div>
-            <div class="stat-label">Общий доход</div>
+          <div class="stat-trend" v-if="stat.trend">
+            <span :class="stat.trend.type">{{ stat.trend.value }}</span>
           </div>
         </div>
       </div>
@@ -123,18 +169,26 @@
     <!-- Recent Activity -->
     <div class="activity-section">
       <div class="section-header">
-        <h2 class="section-title">📝 Недавняя активность</h2>
+        <h2 class="section-title">
+          <span class="title-icon">📝</span>
+          Недавняя активность
+        </h2>
         <nuxt-link to="/borov/history" class="btn-link">
-          Вся история →
+          <span>Вся история</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </nuxt-link>
       </div>
 
       <div class="activity-list">
         <div v-if="recentActivity.length === 0" class="empty-activity">
           <div class="empty-icon">🎯</div>
-          <p>Начни свою первую работу!</p>
-          <nuxt-link to="/borov/enterprises" class="btn btn-primary">
-            Найти работу
+          <h4>Начни свою первую работу!</h4>
+          <p>Запишись на вахту и начни зарабатывать</p>
+          <nuxt-link to="/borov/vakhtas" class="btn btn-primary">
+            <span class="btn-icon">🏕️</span>
+            Найти вахту
           </nuxt-link>
         </div>
 
@@ -143,55 +197,62 @@
             v-for="activity in recentActivity"
             :key="activity.id"
             class="activity-item"
+            @click="viewActivityDetails(activity)"
           >
+            <div class="activity-glow"></div>
             <div class="activity-icon" :class="activity.type">
               {{ getActivityIcon(activity.type) }}
             </div>
             <div class="activity-content">
               <p class="activity-text">{{ activity.text }}</p>
-              <span class="activity-time">{{ formatTime(activity.date) }}</span>
+              <div class="activity-meta">
+                <span class="activity-time">{{ formatTime(activity.date) }}</span>
+                <span class="activity-status" :class="activity.status">{{ activity.statusText }}</span>
+              </div>
+            </div>
+            <div class="activity-arrow">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Job Recommendations -->
-    <div v-if="!currentWork.work && recommendations.length > 0" class="recommendations-section">
-      <div class="section-header">
-        <h2 class="section-title">💎 Рекомендуемые вакансии</h2>
-        <span class="section-badge">Для тебя</span>
-      </div>
 
-      <div class="recommendations-grid">
+
+    <!-- Notification System -->
+    <div class="notification-container">
+      <TransitionGroup name="notification">
         <div
-          v-for="job in recommendations"
-          :key="job.id"
-          class="recommendation-card"
+          v-for="notification in notifications"
+          :key="notification.id"
+          class="notification"
+          :class="notification.type"
         >
-          <div class="job-header">
-            <h4>{{ job.title }}</h4>
-            <div class="job-badge">🔥 Горячая</div>
+          <div class="notification-icon">
+            <span v-if="notification.type === 'success'">✅</span>
+            <span v-else-if="notification.type === 'error'">❌</span>
+            <span v-else>ℹ️</span>
           </div>
-          <div class="job-info">
-            <p class="enterprise">🏢 {{ job.vakhta_title }}</p>
-            <p class="location">📍 {{ job.location }}</p>
+          <div class="notification-content">
+            <p class="notification-title">{{ notification.title }}</p>
+            <p class="notification-message">{{ notification.message }}</p>
           </div>
-          <div class="job-details">
-            <span class="salary">{{ formatSalary(job.salary) }}/день</span>
-            <span class="places">👥 {{ job.free_places }} мест</span>
-          </div>
-          <button @click="applyForJob(job)" class="btn btn-primary btn-full">
-            📝 Откликнуться
+          <button @click="removeNotification(notification.id)" class="notification-close">
+            ×
           </button>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
 
     <!-- Loading Overlay -->
     <div v-if="loading" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <p>Загрузка...</p>
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Загружаем ваши данные...</p>
+      </div>
     </div>
   </div>
 </template>
@@ -199,17 +260,22 @@
 <script setup lang="ts">
 const authStore = useAuthStore()
 
+// Реактивные данные
 const currentWork = ref({ type: 'none', work: null })
 const stats = ref({})
 const recentActivity = ref([])
 const recommendations = ref([])
 const loading = ref(false)
+const notifications = ref([])
 
+// Вычисляемые свойства
 const totalEarned = computed(() => {
   return (stats.value.total_work_days || 0) * 4500
 })
 
-// Загрузка данных
+
+
+// Методы
 const loadDashboardData = async () => {
   try {
     loading.value = true
@@ -233,12 +299,14 @@ const loadDashboardData = async () => {
 
     // Формируем активность
     recentActivity.value = specialtiesResponse
-      .slice(0, 3)
+      .slice(0, 4)
       .map((item: any) => ({
         id: item.id,
         type: item.status === 'active' ? 'work' : 'completed',
-        text: `${item.status === 'active' ? 'Начал работу' : 'Завершил работу'} "${item.specialty_title}"`,
-        date: item.joined_at
+        text: `${item.status === 'active' ? 'Записался на' : 'Завершил'} "${item.specialty_title}"`,
+        date: item.joined_at,
+        status: item.status,
+        statusText: item.status === 'active' ? 'Ожидает связи' : 'Завершено'
       }))
 
     // Загружаем рекомендации если нет работы
@@ -248,6 +316,7 @@ const loadDashboardData = async () => {
 
   } catch (error) {
     console.error('Error loading dashboard data:', error)
+    showNotification('Ошибка загрузки', 'Не удалось загрузить данные', 'error')
   } finally {
     loading.value = false
   }
@@ -266,15 +335,18 @@ const loadRecommendations = async () => {
           if (specialty.free_places > 0 && specialty.is_active) {
             allSpecialties.push({
               ...specialty,
-              vakhta_title: enterprise.title,
-              location: enterprise.location
+              enterprise_name: enterprise.title,
+              location: enterprise.location,
+              is_hot: specialty.free_places < 3,
+              is_urgent: specialty.free_places === 1,
+              contact_soon: true
             })
           }
         })
       }
     })
 
-    recommendations.value = allSpecialties.slice(0, 2)
+    recommendations.value = allSpecialties.slice(0, 3)
   } catch (error) {
     console.error('Error loading recommendations:', error)
   }
@@ -282,7 +354,7 @@ const loadRecommendations = async () => {
 
 const leaveWork = async () => {
   try {
-    if (!confirm('Вы уверены, что хотите завершить текущую работу?')) return
+    if (!confirm('Вы уверены, что хотите отменить запись на эту вахту?')) return
 
     let endpoint = ''
     if (currentWork.value.type === 'specialty') {
@@ -299,16 +371,39 @@ const leaveWork = async () => {
 
       // Обновляем данные
       await loadDashboardData()
-      showNotification('Работа завершена', 'success')
+      showNotification('Запись отменена', 'Вы успешно отменили запись на вахту', 'success')
     }
   } catch (error: any) {
     console.error('Error leaving work:', error)
-    showNotification(error.data?.error || 'Ошибка', 'error')
+    showNotification('Ошибка', error.data?.error || 'Не удалось отменить запись', 'error')
   }
 }
 
 const applyForJob = (job: any) => {
-  navigateTo('/borov/specialties')
+  navigateTo('/borov/vakhtas')
+  showNotification('Успешно!', 'Вы записались на вахту. С вами свяжутся в ближайшее время.', 'success')
+}
+
+const trackAction = (action: string) => {
+  console.log('Action tracked:', action)
+}
+
+const viewActivityDetails = (activity: any) => {
+  navigateTo('/borov/history')
+}
+
+const getInitials = (name: string) => {
+  if (!name) return 'БР'
+  return name.split(' ').map(n => n[0]).join('').toUpperCase()
+}
+
+const getStatusText = (type: string) => {
+  const statusMap: any = {
+    specialty: 'Работаю',
+    vakhta: 'На вахте',
+    none: 'Свободен'
+  }
+  return statusMap[type] || 'Неизвестно'
 }
 
 const formatDate = (dateString: string) => {
@@ -330,17 +425,44 @@ const formatSalary = (amount: number) => {
 
 const getActivityIcon = (type: string) => {
   const icons: any = {
-    work: '👷',
-    completed: '✅'
+    work: '📝',
+    completed: '✅',
+    cancelled: '❌'
   }
-  return icons[type] || '📝'
+  return icons[type] || '📅'
 }
 
-const showNotification = (message: string, type: string) => {
-  // TODO: Реализовать систему уведомлений
-  console.log(`${type}: ${message}`)
+const showNotification = (title: string, message: string, type: string = 'info') => {
+  const id = Date.now()
+  notifications.value.push({
+    id,
+    title,
+    message,
+    type
+  })
+
+  setTimeout(() => {
+    removeNotification(id)
+  }, 5000)
 }
 
+const removeNotification = (id: number) => {
+  notifications.value = notifications.value.filter(n => n.id !== id)
+}
+
+const particleStyle = (index: number) => {
+  const size = Math.random() * 4 + 2
+  const duration = Math.random() * 20 + 10
+  const delay = Math.random() * 5
+  return {
+    width: `${size}px`,
+    height: `${size}px`,
+    animationDuration: `${duration}s`,
+    animationDelay: `${delay}s`
+  }
+}
+
+// Хуки жизненного цикла
 onMounted(() => {
   loadDashboardData()
 })
@@ -352,71 +474,256 @@ onMounted(() => {
   margin: 0 auto;
   padding: 20px;
   min-height: 100vh;
+  position: relative;
 }
 
 /* Hero Section */
 .hero-section {
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 1;
+}
+
+.hero-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+}
+
+.hero-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: float 20s infinite linear;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) translateX(100px) rotate(360deg);
+    opacity: 0;
+  }
 }
 
 .hero-content {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 30px;
   align-items: start;
+  padding: 40px;
+  color: white;
+}
+
+.welcome-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar-container {
+  position: relative;
+}
+
+.user-avatar {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.online-status {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 16px;
+  height: 16px;
+  background: #4ade80;
+  border: 2px solid white;
+  border-radius: 50%;
 }
 
 .welcome-title {
   font-size: 2.5rem;
   margin-bottom: 10px;
-  color: #333;
+  color: white;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.specialty { background: #4ade80; }
+.status-dot.vakhta { background: #f59e0b; }
+.status-dot.none { background: #94a3b8; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .welcome-subtitle {
   font-size: 1.2rem;
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
 }
 
 /* Status Card */
+.status-section {
+  position: relative;
+}
+
 .status-card {
-  background: white;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
   padding: 25px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.status-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.status-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.status-card:hover .status-glow {
+  opacity: 1;
+}
+
+.status-card {
   display: flex;
   align-items: center;
   gap: 20px;
-  border-left: 6px solid #007bff;
-}
-
-.status-card.specialty {
-  border-left-color: #28a745;
-}
-
-.status-card.vakhta {
-  border-left-color: #ffc107;
-}
-
-.status-card.none {
-  border-left-color: #6c757d;
 }
 
 .status-icon {
   font-size: 3rem;
+  flex-shrink: 0;
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.status-badge.specialty {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.status-badge.vakhta {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.none {
+  background: rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
 .status-info h3 {
-  margin: 0 0 8px 0;
-  color: #333;
+  margin: 0 0 15px 0;
+  color: white;
   font-size: 1.3rem;
 }
 
-.status-info p {
-  margin: 0;
-  color: #666;
-  font-size: 0.95rem;
+.status-details {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.contact-info {
+  margin-top: 10px;
+}
+
+.contact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 /* Quick Actions */
@@ -427,8 +734,15 @@ onMounted(() => {
 .section-title {
   font-size: 1.8rem;
   margin-bottom: 25px;
-  color: #333;
+  color: #1f2937;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-icon {
+  font-size: 1.5rem;
 }
 
 .actions-grid {
@@ -439,7 +753,7 @@ onMounted(() => {
 
 .action-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 25px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   display: flex;
@@ -449,50 +763,72 @@ onMounted(() => {
   color: inherit;
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.action-card:hover .action-glow {
+  opacity: 1;
 }
 
 .action-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
 }
 
 .action-card.primary {
-  border-color: #007bff;
+  border-color: #3b82f6;
 }
 
 .action-card.secondary {
-  border-color: #28a745;
+  border-color: #10b981;
 }
 
 .action-card.accent {
-  border-color: #ffc107;
+  border-color: #f59e0b;
 }
 
 .action-card.neutral {
-  border-color: #6c757d;
+  border-color: #6b7280;
 }
 
 .action-icon {
   font-size: 2.5rem;
+  flex-shrink: 0;
 }
 
 .action-content h3 {
   margin: 0 0 8px 0;
-  color: #333;
+  color: #1f2937;
   font-size: 1.2rem;
 }
 
 .action-content p {
   margin: 0;
-  color: #666;
+  color: #6b7280;
   font-size: 0.9rem;
 }
 
 .action-arrow {
-  color: #007bff;
-  font-size: 1.5rem;
-  font-weight: bold;
+  color: #3b82f6;
   margin-left: auto;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.action-card:hover .action-arrow {
+  transform: translateX(5px);
 }
 
 /* Stats Section */
@@ -502,35 +838,68 @@ onMounted(() => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
 }
 
 .stat-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 25px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
   gap: 15px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+.stat-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover .stat-glow {
+  opacity: 1;
 }
 
 .stat-icon {
   font-size: 2.5rem;
   opacity: 0.8;
+  flex-shrink: 0;
 }
 
 .stat-number {
   font-size: 2rem;
   font-weight: bold;
-  color: #007bff;
   margin-bottom: 5px;
 }
 
 .stat-label {
-  color: #666;
+  color: #6b7280;
   font-size: 0.9rem;
+}
+
+.stat-trend {
+  margin-left: auto;
+}
+
+.stat-trend .up {
+  color: #10b981;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 /* Activity Section */
@@ -546,14 +915,22 @@ onMounted(() => {
 }
 
 .btn-link {
-  color: #007bff;
+  color: #3b82f6;
   text-decoration: none;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: gap 0.3s ease;
+}
+
+.btn-link:hover {
+  gap: 10px;
 }
 
 .activity-list {
   background: white;
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   overflow: hidden;
 }
@@ -561,7 +938,7 @@ onMounted(() => {
 .empty-activity {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: #6b7280;
 }
 
 .empty-icon {
@@ -570,8 +947,17 @@ onMounted(() => {
   opacity: 0.7;
 }
 
+.empty-activity h4 {
+  margin: 0 0 10px 0;
+  color: #374151;
+}
+
+.empty-activity p {
+  margin: 0 0 20px 0;
+}
+
 .activity-items {
-  padding: 20px 0;
+  padding: 10px 0;
 }
 
 .activity-item {
@@ -579,42 +965,108 @@ onMounted(() => {
   align-items: center;
   gap: 20px;
   padding: 20px 30px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.activity-item:hover {
+  background: #f9fafb;
 }
 
 .activity-item:last-child {
   border-bottom: none;
 }
 
+.activity-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.activity-item:hover .activity-glow {
+  opacity: 1;
+}
+
 .activity-icon {
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
 .activity-icon.work {
-  background: #fff3cd;
-  color: #856404;
+  background: #fff7ed;
+  color: #ea580c;
 }
 
 .activity-icon.completed {
-  background: #d4edda;
-  color: #155724;
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.activity-icon.cancelled {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.activity-content {
+  flex: 1;
 }
 
 .activity-text {
-  margin: 0 0 5px 0;
-  color: #333;
+  margin: 0 0 8px 0;
+  color: #374151;
   font-weight: 500;
+}
+
+.activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .activity-time {
   font-size: 0.8rem;
-  color: #666;
+  color: #6b7280;
+}
+
+.activity-status {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.activity-status.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.activity-status.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.activity-arrow {
+  color: #9ca3af;
+  transition: transform 0.3s ease;
+}
+
+.activity-item:hover .activity-arrow {
+  transform: translateX(5px);
+  color: #3b82f6;
 }
 
 /* Recommendations */
@@ -623,26 +1075,54 @@ onMounted(() => {
 }
 
 .section-badge {
-  background: #ffc107;
-  color: #212529;
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.8rem;
+  background: #f59e0b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.7rem;
   font-weight: 600;
+  margin-left: 10px;
 }
 
 .recommendations-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
 }
 
 .recommendation-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 25px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  border: 2px solid #ffc107;
+  border: 2px solid #e5e7eb;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.recommendation-card.hot {
+  border-color: #f59e0b;
+}
+
+.recommendation-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.job-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.recommendation-card:hover .job-glow {
+  opacity: 1;
 }
 
 .job-header {
@@ -654,48 +1134,74 @@ onMounted(() => {
 
 .job-header h4 {
   margin: 0;
-  color: #333;
+  color: #1f2937;
   font-size: 1.2rem;
+  flex: 1;
+}
+
+.job-badges {
+  display: flex;
+  gap: 8px;
 }
 
 .job-badge {
-  background: #ffc107;
-  color: #212529;
   padding: 4px 8px;
   border-radius: 8px;
   font-size: 0.7rem;
   font-weight: 600;
 }
 
-.job-info {
-  margin-bottom: 15px;
+.job-badge.hot {
+  background: #fef3c7;
+  color: #d97706;
 }
 
-.enterprise, .location {
-  margin: 5px 0;
-  color: #666;
+.job-badge.urgent {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.job-info {
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 
 .job-details {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 12px;
 }
 
 .salary {
-  color: #28a745;
+  color: #059669;
   font-weight: 600;
+  font-size: 1.1rem;
 }
 
 .places {
-  color: #666;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Buttons */
 .btn {
-  padding: 12px 24px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: 500;
   text-decoration: none;
@@ -704,24 +1210,44 @@ onMounted(() => {
   gap: 8px;
   transition: all 0.3s ease;
   font-size: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn:hover::before {
+  left: 100%;
 }
 
 .btn-primary {
-  background: #007bff;
+  background: #3b82f6;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #0056b3;
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
 }
 
 .btn-warning {
-  background: #ffc107;
-  color: #212529;
+  background: #f59e0b;
+  color: white;
 }
 
 .btn-warning:hover {
-  background: #e0a800;
+  background: #d97706;
+  transform: translateY(-2px);
 }
 
 .btn-sm {
@@ -734,6 +1260,97 @@ onMounted(() => {
   justify-content: center;
 }
 
+.btn-icon {
+  font-size: 1.1rem;
+}
+
+/* Notifications */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 400px;
+}
+
+.notification {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-left: 4px solid #3b82f6;
+  animation: slideInRight 0.3s ease;
+}
+
+.notification.success {
+  border-left-color: #10b981;
+}
+
+.notification.error {
+  border-left-color: #ef4444;
+}
+
+.notification-enter-active,
+.notification-leave-active {
+  transition: all 0.3s ease;
+}
+
+.notification-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.notification-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.notification-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-title {
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #1f2937;
+}
+
+.notification-message {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-close:hover {
+  color: #6b7280;
+}
+
 /* Loading */
 .loading-overlay {
   position: fixed;
@@ -741,28 +1358,43 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.7);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(10px);
+}
+
+.loading-content {
+  text-align: center;
   color: white;
-  z-index: 1000;
 }
 
 .loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255,255,255,0.3);
+  border-top: 4px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 15px;
+  margin: 0 auto 20px;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Mobile Responsive */
@@ -774,10 +1406,17 @@ onMounted(() => {
   .hero-content {
     grid-template-columns: 1fr;
     gap: 20px;
+    padding: 30px 20px;
   }
 
   .welcome-title {
     font-size: 2rem;
+  }
+
+  .welcome-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
   }
 
   .status-card {
@@ -813,6 +1452,16 @@ onMounted(() => {
     gap: 10px;
     align-items: flex-start;
   }
+
+  .job-badges {
+    align-self: flex-start;
+  }
+
+  .notification-container {
+    left: 20px;
+    right: 20px;
+    max-width: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -834,6 +1483,47 @@ onMounted(() => {
 
   .action-arrow {
     margin-left: 0;
+  }
+
+  .job-details {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .hero-content {
+    padding: 20px 15px;
+  }
+
+  .welcome-title {
+    font-size: 1.7rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .borov-dashboard {
+    background: #0f0f0f;
+    color: white;
+  }
+
+  .action-card,
+  .stat-card,
+  .activity-list,
+  .recommendation-card {
+    background: #1a1a1a;
+    color: white;
+  }
+
+  .action-content h3,
+  .stat-label,
+  .activity-text {
+    color: white;
+  }
+
+  .action-content p,
+  .activity-time {
+    color: #a0a0a0;
   }
 }
 </style>

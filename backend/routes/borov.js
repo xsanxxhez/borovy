@@ -13,7 +13,10 @@ const {
   getMyVakhtas,
   getBorovStats,
   changePassword,
-  getCurrentWork
+  getCurrentWork,
+  getBorovProfile,
+    updateBorovProfile,
+    getPublicProfile
 } = require('../controllers/borovController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validateBorov } = require('../middleware/validation');
@@ -44,6 +47,10 @@ router.get('/specialties/my', getMySpecialties);
 
 // Statistics
 router.get('/stats', getBorovStats);
+
+router.get('/profile', getBorovProfile);
+router.put('/profile', updateBorovProfile);
+router.get('/profile/:borov_id/public', getPublicProfile);
 
 // Password
 router.post('/change-password', changePassword);

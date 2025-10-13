@@ -109,6 +109,42 @@ const updateSpecialty = async (req, res) => {
   }
 };
 
+const getSpecialtyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        s.*,
+        v.title as vakhta_title,
+        v.location,
+        v.start_date,
+        v.end_date,
+        v.description as vakhta_description,
+        (SELECT COUNT(*) FROM borov_specialty_history
+         WHERE specialty_id = s.id AND status = 'active') as current_workers,
+        s.total_places - (SELECT COUNT(*) FROM borov_specialty_history
+                        WHERE specialty_id = s.id AND status = 'active') as free_places,
+        EXISTS(
+          SELECT 1 FROM borov_specialty_history
+          WHERE borov_id = $2 AND specialty_id = s.id AND status = 'active'
+        ) as is_joined
+      FROM specialties s
+      JOIN vakhtas v ON s.vakhta_id = v.id
+      WHERE s.id = $1 AND s.is_active = true AND v.is_active = true
+    `, [id, req.user?.id]); // req.user?.id для проверки, записан ли текущий пользователь
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Specialty not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Get specialty by id error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Удаление специальности
 const deleteSpecialty = async (req, res) => {
   try {
@@ -147,5 +183,6 @@ module.exports = {
   getSpecialtiesByVakhta,
   getAllSpecialties,
   updateSpecialty,
-  deleteSpecialty
+  deleteSpecialty,
+  getSpecialtyById
 };

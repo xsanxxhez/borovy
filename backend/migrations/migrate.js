@@ -123,6 +123,32 @@ const createTables = async () => {
     `);
     console.log('✅ borov_specialty_history table created');
 
+    // Create borov_profiles table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS borov_profiles (
+        id SERIAL PRIMARY KEY,
+        borov_id INTEGER NOT NULL REFERENCES borovs(id) ON DELETE CASCADE,
+        about_me TEXT,
+        specialization VARCHAR[],
+        experience_years INTEGER,
+        experience_description TEXT,
+        driver_license_category VARCHAR[],
+        languages JSONB,
+        skills TEXT[],
+        education TEXT,
+        certifications TEXT[],
+        preferred_work_types VARCHAR[],
+        work_radius INTEGER,
+        has_car BOOLEAN DEFAULT false,
+        has_tools BOOLEAN DEFAULT false,
+        salary_expectations INTEGER,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(borov_id)
+      );
+    `);
+    console.log('✅ borov_profiles table created');
+
     // Create borov_stats table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS borov_stats (
@@ -135,10 +161,14 @@ const createTables = async () => {
     `);
     console.log('✅ borov_stats table created');
 
-    ALTER TABLE slons ADD COLUMN deleted_at TIMESTAMP;
-    ALTER TABLE vakhtas ADD COLUMN deleted_at TIMESTAMP;
-    ALTER TABLE specialties ADD COLUMN deleted_at TIMESTAMP;
-    ALTER TABLE promo_codes ADD COLUMN deleted_at TIMESTAMP;
+    // Add deleted_at columns for soft delete
+    await pool.query(`
+      ALTER TABLE slons ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+      ALTER TABLE vakhtas ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+      ALTER TABLE specialties ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+      ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+    `);
+    console.log('✅ Soft delete columns added');
 
     // Add indexes for better performance
     await pool.query(`
@@ -151,6 +181,12 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_borov_vakhta_borov_id ON borov_vakhta_history(borov_id);
       CREATE INDEX IF NOT EXISTS idx_borov_vakhta_vakhta_id ON borov_vakhta_history(vakhta_id);
       CREATE INDEX IF NOT EXISTS idx_borov_vakhta_status ON borov_vakhta_history(status) WHERE status = 'active';
+
+      -- Indexes for borov_profiles
+      CREATE INDEX IF NOT EXISTS idx_borov_profiles_specialization ON borov_profiles USING GIN(specialization);
+      CREATE INDEX IF NOT EXISTS idx_borov_profiles_driver_license ON borov_profiles USING GIN(driver_license_category);
+      CREATE INDEX IF NOT EXISTS idx_borov_profiles_work_types ON borov_profiles USING GIN(preferred_work_types);
+      CREATE INDEX IF NOT EXISTS idx_borov_profiles_borov_id ON borov_profiles(borov_id);
     `);
     console.log('✅ Performance indexes created');
 

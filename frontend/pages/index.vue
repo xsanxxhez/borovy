@@ -1,183 +1,167 @@
 <template>
   <div class="home-page">
-    <!-- Герой секция -->
+    <!-- Герой секция с параллакс эффектом -->
     <div class="hero-section">
+      <div class="hero-background">
+        <div class="parallax-bg"></div>
+        <div class="hero-overlay"></div>
+      </div>
+
       <div class="hero-content">
-        <h1 class="hero-title">BOROVY</h1>
-        <p class="hero-subtitle">ТВОЯ НАДЁЖНАЯ ВАХТА</p>
+
+
+        <h1 class="hero-title">
+          <span class="title-line">BOROVY</span>
+          <span class="title-subline">ВАХТОВАЯ ПЛАТФОРМА</span>
+        </h1>
+
+        <div class="hero-divider">
+          <div class="divider-line"></div>
+          <div class="divider-dot"></div>
+          <div class="divider-line"></div>
+        </div>
+
         <p class="hero-description">
-          Первая платформа, которая ставит интересы вахтовика на первое место.
-          Не просто поиск работы, а полноценная экосистема для твоей карьеры.
+          Профессиональная экосистема для вахтовиков.
+          Гарантированная работа, защищённые условия и карьерный рост
+          в проверенных компаниях.
         </p>
 
         <!-- Кнопки авторизации -->
         <div class="auth-buttons" v-if="!authStore.isAuthenticated">
           <nuxt-link to="/login" class="btn btn-primary">
-            <span>Войти в систему</span>
+            <span class="btn-content">
+              <span class="btn-text">Войти в систему</span>
+              <span class="btn-arrow">→</span>
+            </span>
           </nuxt-link>
           <nuxt-link to="/register" class="btn btn-outline">
-            <span>Начать работать</span>
+            <span class="btn-content">
+              <span class="btn-text">Начать работать</span>
+              <span class="btn-arrow">→</span>
+            </span>
           </nuxt-link>
         </div>
 
         <!-- Приветствие для авторизованных -->
         <div v-else class="user-welcome">
           <div class="welcome-card">
-            <h2>С возвращением, {{ authStore.user?.display_name }}!</h2>
-            <p>Твой личный кабинет готов к работе</p>
+            <div class="welcome-icon">
+              <i class="icon-user-check"></i>
+            </div>
+            <h2>Добро пожаловать, {{ authStore.user?.display_name }}!</h2>
+            <p>Ваш персональный кабинет готов к работе</p>
             <nuxt-link :to="getDashboardRoute()" class="btn btn-primary btn-large">
-              Перейти в кабинет
+              <span>Перейти в кабинет</span>
             </nuxt-link>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Почему мы другие -->
-    <div class="difference-section">
-      <div class="container">
-        <h2 class="section-title">ПОЧЕМУ МЫ — НЕ ПРОСТО ДОСКА ОБЪЯВЛЕНИЙ</h2>
-        <div class="difference-grid">
-          <div class="difference-card">
-            <div class="difference-icon">🛡️</div>
-            <h3>Гарантия безопасности</h3>
-            <p>Мы лично проверяем каждое предприятие. Никаких мошенников — только проверенные вахты с реальными работодателями.</p>
+        <!-- Статистика компании -->
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-number">50+</div>
+            <div class="stat-label">компаний-партнёров</div>
           </div>
-
-          <div class="difference-card">
-            <div class="difference-icon">💼</div>
-            <h3>Постоянная работа</h3>
-            <p>Не разовые подработки, а долгосрочная карьера. Закончил одну вахту — мы сразу подберем следующую.</p>
+          <div class="stat-item">
+            <div class="stat-number">10 000+</div>
+            <div class="stat-label">успешных вахт</div>
           </div>
-
-          <div class="difference-card">
-            <div class="difference-icon">📊</div>
-            <h3>Личный рост</h3>
-            <p>Веди статистику, повышай рейтинг, получай доступ к лучшим вахтам. Чем больше работаешь — тем выгоднее условия.</p>
+          <div class="stat-item">
+            <div class="stat-number">98%</div>
+            <div class="stat-label">положительных отзывов</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Как это работает -->
-    <div class="how-it-works">
+    <!-- Преимущества с иконками -->
+    <div class="benefits-section">
       <div class="container">
-        <h2 class="section-title">КАК МЫ РАБОТАЕМ ДЛЯ ТЕБЯ</h2>
-        <div class="steps">
-          <div class="step">
-            <div class="step-number">1</div>
-            <h3>Регистрация</h3>
-            <p>Получи промокод от нашего менеджера и создай аккаунт. Это гарантия того, что ты работаешь через проверенного посредника.</p>
-          </div>
-          <div class="step">
-            <div class="step-number">2</div>
-            <h3>Выбор вахты</h3>
-            <p>Просматривай только проверенные вакансии. Мы уже отсеяли сомнительные предложения за тебя.</p>
-          </div>
-          <div class="step">
-            <div class="step-number">3</div>
-            <h3>Работа с гарантией</h3>
-            <p>Выходи на вахту с уверенностью. Мы контролирем процесс и решаем любые вопросы.</p>
-          </div>
-          <div class="step">
-            <div class="step-number">4</div>
-            <h3>Карьерный рост</h3>
-            <p>Зарабатывай репутацию, получай доступ к более выгодным вахтам, строй карьеру в нашей системе.</p>
+        <div class="section-header">
+          <h2 class="section-title">ПОЧЕМУ ВЫБИРАЮТ BOROVY</h2>
+          <p class="section-subtitle">Создаём новые стандарты в вахтовой работе</p>
+        </div>
+
+        <div class="benefits-grid">
+          <div class="benefit-card" v-for="benefit in benefits" :key="benefit.id">
+            <div class="benefit-icon">
+              <i :class="benefit.icon"></i>
+            </div>
+            <h3>{{ benefit.title }}</h3>
+            <p>{{ benefit.description }}</p>
+            <div class="benefit-hover"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Наши преимущества -->
-    <div class="advantages-section">
+    <!-- Процесс работы -->
+    <div class="process-section">
       <div class="container">
-        <h2 class="section-title">ЧТО ТЫ ПОЛУЧАЕШЬ С BOROVY</h2>
-        <div class="advantages-grid">
-          <div class="advantage-card">
-            <div class="advantage-header">
-              <div class="advantage-icon">🎯</div>
-              <h3>Только проверенные вахты</h3>
-            </div>
-            <p>Мы сотрудничаем исключительно с надежными рекрутинговыми агентствами. Никаких "левых" предложений и обмана.</p>
-          </div>
+        <div class="section-header">
+          <h2 class="section-title">КАК НАЧАТЬ РАБОТАТЬ</h2>
+          <p class="section-subtitle">Простой путь к вашей следующей вахте</p>
+        </div>
 
-          <div class="advantage-card">
-            <div class="advantage-header">
-              <div class="advantage-icon">🤝</div>
-              <h3>Забота о каждом</h3>
+        <div class="process-timeline">
+          <div class="process-step" v-for="step in processSteps" :key="step.number">
+            <div class="step-number">{{ step.number }}</div>
+            <div class="step-content">
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.description }}</p>
             </div>
-            <p>Мы не бросаем тебя после устройства на работу. Решаем вопросы, консультируем, помогаем на всех этапах.</p>
-          </div>
-
-          <div class="advantage-card">
-            <div class="advantage-header">
-              <div class="advantage-icon">📈</div>
-              <h3>Растем вместе</h3>
-            </div>
-            <p>Наша бизнес-модель построена на твоем успехе. Мы зарабатываем, только когда ты успешно работаешь.</p>
-          </div>
-
-          <div class="advantage-card">
-            <div class="advantage-header">
-              <div class="advantage-icon">🔒</div>
-              <h3>Финансовая безопасность</h3>
-            </div>
-            <p>Прозрачные условия оплаты. Все расчеты через официальные каналы. Никаких серых схем.</p>
-          </div>
-
-          <div class="advantage-card">
-            <div class="advantage-header">
-              <div class="advantage-icon">🚀</div>
-              <h3>Умный подбор</h3>
-            </div>
-            <p>Система запоминает твои предпочтения и опыт. Со временем подбор вахт становится точнее и выгоднее для тебя.</p>
-          </div>
-
-          <div class="advantage-card">
-            <div class="advantage-header">
-              <div class="advantage-icon">⭐</div>
-              <h3>Репутация имеет значение</h3>
-            </div>
-            <p>Чем лучше ты работаешь, тем выше твой рейтинг. Это открывает доступ к премиальным вахтам с лучшими условиями.</p>
+            <div class="step-connector" v-if="step.number < 4"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Для кого это -->
-    <div class="for-whom-section">
+    <!-- Особенности платформы -->
+    <div class="features-section">
       <div class="container">
-        <h2 class="section-title">ЭТОТ СЕРВИС ДЛЯ ТЕБЯ, ЕСЛИ ТЫ:</h2>
-        <div class="for-whom-grid">
-          <div class="for-whom-card">
-            <div class="for-whom-icon">💪</div>
-            <div class="for-whom-content">
-              <h3>Ищешь надежную работу</h3>
-              <p>Устал от мошенников и невыплат? Мы даем гарантии и отвечаем за каждое предложение.</p>
+        <div class="features-grid">
+          <div class="feature-main">
+            <h2>ИНТЕЛЛЕКТУАЛЬНАЯ ПЛАТФОРМА</h2>
+            <p>Система, которая учится вашим предпочтениям и предлагает идеальные вахты</p>
+
+            <div class="feature-highlights">
+              <div class="highlight-item">
+                <i class="icon-target"></i>
+                <div>
+                  <h4>Умный подбор</h4>
+                  <p>Алгоритмы анализируют ваш опыт и подбирают оптимальные варианты</p>
+                </div>
+              </div>
+
+              <div class="highlight-item">
+                <i class="icon-shield"></i>
+                <div>
+                  <h4>Гарантия безопасности</h4>
+                  <p>Все работодатели проходят многоэтапную проверку</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="for-whom-card">
-            <div class="for-whom-icon">📅</div>
-            <div class="for-whom-content">
-              <h3>Хочешь стабильности</h3>
-              <p>Мечтаешь о системе, где закончил одну вахту — уже есть следующая? Мы строим такую экосистему.</p>
+          <div class="feature-visual">
+            <div class="visual-card card-1">
+              <div class="card-content">
+                <h4>Рейтинговая система</h4>
+                <p>Зарабатывайте репутацию, получайте лучшие условия</p>
+              </div>
             </div>
-          </div>
-
-          <div class="for-whom-card">
-            <div class="for-whom-icon">🎯</div>
-            <div class="for-whom-content">
-              <h3>Ценишь свое время</h3>
-              <p>Не хочешь тратить недели на поиск работы? Мы подбираем проверенные варианты быстро и точно.</p>
+            <div class="visual-card card-2">
+              <div class="card-content">
+                <h4>Карьерный рост</h4>
+                <p>От рядового специалиста до руководителя проекта</p>
+              </div>
             </div>
-          </div>
-
-          <div class="for-whom-card">
-            <div class="for-whom-icon">🚀</div>
-            <div class="for-whom-content">
-              <h3>Планируешь карьеру</h3>
-              <p>Видишь себя в вахтовой работе на годы вперед? Мы поможем построить успешную карьеру.</p>
+            <div class="visual-card card-3">
+              <div class="card-content">
+                <h4>Поддержка 24/7</h4>
+                <p>Персональный менеджер решает любые вопросы</p>
+              </div>
             </div>
           </div>
         </div>
@@ -186,21 +170,27 @@
 
     <!-- CTA секция -->
     <div class="cta-section">
+      <div class="cta-background">
+        <div class="cta-overlay"></div>
+      </div>
+
       <div class="container">
         <div class="cta-content">
-          <h2>ГОТОВ НАЧАТЬ РАБОТАТЬ С ГАРАНТИЯМИ?</h2>
-          <p>Присоединяйся к сообществу профессиональных вахтовиков</p>
+          <h2>ГОТОВЫ НАЧАТЬ РАБОТАТЬ?</h2>
+          <p>Присоединяйтесь к сообществу профессионалов</p>
+
           <div class="cta-buttons" v-if="!authStore.isAuthenticated">
             <nuxt-link to="/register" class="btn btn-primary btn-large">
-              Начать карьеру
+              <span>Начать карьеру</span>
             </nuxt-link>
             <nuxt-link to="/login" class="btn btn-outline btn-large">
-              Уже работаю
+              <span>Войти в систему</span>
             </nuxt-link>
           </div>
+
           <div v-else class="cta-buttons">
             <nuxt-link :to="getDashboardRoute()" class="btn btn-primary btn-large">
-              Перейти в кабинет
+              <span>Перейти в кабинет</span>
             </nuxt-link>
           </div>
         </div>
@@ -212,14 +202,69 @@
 <script setup lang="ts">
 const authStore = useAuthStore()
 
-const getRoleName = (role: string) => {
-  const roles: any = {
-    admin: 'Администратор',
-    slon: 'Менеджер',
-    borov: 'Боров'
+// Данные для преимуществ
+const benefits = [
+  {
+    id: 1,
+    icon: 'icon-shield-check',
+    title: 'Проверенные компании',
+    description: 'Все работодатели проходят тщательную проверку. Никаких мошенников или невыплат.'
+  },
+  {
+    id: 2,
+    icon: 'icon-briefcase',
+    title: 'Непрерывная занятость',
+    description: 'Завершили одну вахту — сразу получаете следующую. Никаких простоев в работе.'
+  },
+  {
+    id: 3,
+    icon: 'icon-trending-up',
+    title: 'Карьерное развитие',
+    description: 'Повышайте рейтинг, открывайте доступ к премиальным вахтам с лучшими условиями.'
+  },
+  {
+    id: 4,
+    icon: 'icon-file-text',
+    title: 'Прозрачные условия',
+    description: 'Все договоры и условия работы полностью прозрачны. Никаких скрытых пунктов.'
+  },
+  {
+    id: 5,
+    icon: 'icon-users',
+    title: 'Персональный менеджер',
+    description: 'Ваш личный помощник решает все вопросы 24/7. Вы никогда не остаетесь один на один с проблемами.'
+  },
+  {
+    id: 6,
+    icon: 'icon-award',
+    title: 'Премиум-вахты',
+    description: 'Доступ к эксклюзивным проектам с повышенной оплатой и улучшенными условиями.'
   }
-  return roles[role] || role
-}
+]
+
+// Данные для процесса работы
+const processSteps = [
+  {
+    number: 1,
+    title: 'Регистрация',
+    description: 'Получите промокод от менеджера и создайте аккаунт в системе'
+  },
+  {
+    number: 2,
+    title: 'Подбор вахты',
+    description: 'Выбирайте из проверенных вакансий, которые соответствуют вашему опыту'
+  },
+  {
+    number: 3,
+    title: 'Выход на объект',
+    description: 'Приступайте к работе с полной уверенностью в условиях и оплате'
+  },
+  {
+    number: 4,
+    title: 'Карьерный рост',
+    description: 'Повышайте рейтинг и получайте доступ к более выгодным проектам'
+  }
+]
 
 const getDashboardRoute = () => {
   if (authStore.isAdmin) return '/admin'
@@ -227,166 +272,294 @@ const getDashboardRoute = () => {
   if (authStore.isBorov) return '/borov'
   return '/'
 }
+
+// Анимация при скролле
+onMounted(() => {
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-in')
+      }
+    })
+  }, observerOptions)
+
+  document.querySelectorAll('.benefit-card, .process-step, .feature-card').forEach(el => {
+    observer.observe(el)
+  })
+})
 </script>
 
 <style scoped>
 .home-page {
   min-height: 100vh;
-  background: #0f0f0f;
+  background: #0a0a0a;
 }
 
 /* Герой секция */
 .hero-section {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-  color: white;
-  padding: 100px 20px;
-  text-align: center;
-  border-bottom: 3px solid #d4af37;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   overflow: hidden;
+  color: white;
+  padding: 120px 20px 80px;
 }
 
-.hero-section::before {
-  content: '';
+.hero-background {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23d4af37' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-  opacity: 0.3;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.parallax-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 120%;
+  background:
+    linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-attachment: fixed;
+  transform: translateZ(0);
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 10, 10, 0.9) 0%,
+    rgba(26, 26, 26, 0.7) 50%,
+    rgba(42, 42, 42, 0.9) 100%
+  );
 }
 
 .hero-content {
-  max-width: 800px;
-  margin: 0 auto;
   position: relative;
   z-index: 2;
+  text-align: center;
+  max-width: 1200px;
+  width: 100%;
 }
 
-.hero-title {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  font-weight: 800;
-  color: #d4af37;
-  letter-spacing: 3px;
+.hero-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  color: #0a0a0a;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 30px;
   text-transform: uppercase;
 }
 
-.hero-subtitle {
+.hero-title {
+  font-size: 4.5rem;
+  font-weight: 300;
+  margin-bottom: 20px;
+  line-height: 1.1;
+}
+
+.title-line {
+  display: block;
+  font-weight: 700;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.title-subline {
+  display: block;
   font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  opacity: 0.9;
-  font-weight: 600;
-  letter-spacing: 1px;
+  font-weight: 300;
+  letter-spacing: 8px;
+  margin-top: 10px;
+  opacity: 0.8;
+}
+
+.hero-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin: 30px 0;
+}
+
+.divider-line {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d4af37, transparent);
+}
+
+.divider-dot {
+  width: 6px;
+  height: 6px;
+  background: #d4af37;
+  border-radius: 50%;
 }
 
 .hero-description {
   font-size: 1.3rem;
-  margin-bottom: 3rem;
-  opacity: 0.8;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
   line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto 50px;
+  opacity: 0.9;
+  font-weight: 300;
 }
 
+/* Кнопки */
 .auth-buttons {
   display: flex;
   gap: 20px;
   justify-content: center;
   flex-wrap: wrap;
+  margin-bottom: 80px;
 }
 
 .btn {
-  padding: 15px 30px;
-  border-radius: 8px;
+  padding: 18px 40px;
+  border-radius: 12px;
   text-decoration: none;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   font-size: 16px;
-  min-width: 200px;
+  min-width: 220px;
   text-transform: uppercase;
   letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  border: none;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.6s;
+}
+
+.btn:hover::before {
+  left: 100%;
 }
 
 .btn-primary {
-  background: #d4af37;
-  color: #1a1a1a;
-  border: 2px solid #d4af37;
-  font-weight: 700;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  color: #0a0a0a;
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.3);
 }
 
 .btn-primary:hover {
-  background: #c19b2e;
-  border-color: #c19b2e;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
 }
 
 .btn-outline {
   background: transparent;
   color: #d4af37;
   border: 2px solid #d4af37;
+  backdrop-filter: blur(10px);
 }
 
 .btn-outline:hover {
   background: #d4af37;
-  color: #1a1a1a;
-  transform: translateY(-2px);
+  color: #0a0a0a;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+}
+
+.btn-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.btn-arrow {
+  transition: transform 0.3s ease;
+}
+
+.btn:hover .btn-arrow {
+  transform: translateX(5px);
 }
 
 .btn-large {
-  padding: 18px 40px;
+  padding: 20px 45px;
   font-size: 18px;
 }
 
-/* Приветствие пользователя */
-.user-welcome {
-  margin-top: 30px;
+/* Статистика */
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  padding-top: 50px;
 }
 
-.welcome-card {
-  background: rgba(212, 175, 55, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 40px;
-  border-radius: 15px;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  max-width: 500px;
-  margin: 0 auto;
+.stat-item {
+  text-align: center;
 }
 
-.welcome-card h2 {
-  margin-bottom: 15px;
-  font-size: 2rem;
-  color: #d4af37;
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
 }
 
-.welcome-card p {
-  margin-bottom: 25px;
-  opacity: 0.9;
-  font-size: 1.1rem;
-  color: #e0e0e0;
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* Секции */
-.difference-section,
-.how-it-works,
-.advantages-section,
-.for-whom-section {
-  padding: 80px 20px;
-  background: #1a1a1a;
-  border-bottom: 1px solid #333;
+.benefits-section,
+.process-section,
+.features-section {
+  padding: 100px 20px;
+  position: relative;
 }
 
-.difference-section {
+.benefits-section {
   background: #0f0f0f;
 }
 
-.advantages-section {
+.process-section {
+  background: #0a0a0a;
+}
+
+.features-section {
   background: #0f0f0f;
 }
 
@@ -395,258 +568,382 @@ const getDashboardRoute = () => {
   margin: 0 auto;
 }
 
-.section-title {
+.section-header {
   text-align: center;
-  font-size: 2.5rem;
-  margin-bottom: 3rem;
-  color: #d4af37;
-  font-weight: 700;
-  text-transform: uppercase;
+  margin-bottom: 80px;
+}
+
+.section-title {
+  font-size: 2.8rem;
+  font-weight: 300;
+  margin-bottom: 15px;
+  color: #fff;
   letter-spacing: 2px;
 }
 
-/* Difference Grid */
-.difference-grid {
+.section-subtitle {
+  font-size: 1.2rem;
+  opacity: 0.7;
+  font-weight: 300;
+}
+
+/* Преимущества */
+.benefits-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 30px;
+  gap: 40px;
 }
 
-.difference-card {
-  background: #2a2a2a;
-  padding: 40px 30px;
-  border-radius: 15px;
-  border: 1px solid #333;
+.benefit-card {
+  background: linear-gradient(145deg, #1a1a1a, #151515);
+  padding: 50px 30px;
+  border-radius: 20px;
   text-align: center;
-  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  border: 1px solid #2a2a2a;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  opacity: 0;
+  transform: translateY(30px);
 }
 
-.difference-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #d4af37, #ffd700);
+.benefit-card.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(var(--index, 0) * 0.1s);
 }
 
-.difference-card:hover {
+.benefit-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.2);
   border-color: #d4af37;
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(212, 175, 55, 0.1);
 }
 
-.difference-icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
-  display: block;
-}
-
-.difference-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 15px;
-  color: #fff;
-  font-weight: 600;
-}
-
-.difference-card p {
-  color: #ccc;
-  margin-bottom: 0;
-  line-height: 1.6;
-  font-size: 1.1rem;
-}
-
-/* Steps */
-.steps {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 40px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.step {
-  text-align: center;
-  padding: 40px 30px;
-  background: #2a2a2a;
-  border-radius: 15px;
-  border: 1px solid #333;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.step:hover {
-  border-color: #d4af37;
-  transform: translateY(-5px);
-}
-
-.step-number {
-  width: 70px;
-  height: 70px;
-  background: linear-gradient(135deg, #d4af37 0%, #ffd700 100%);
-  color: #1a1a1a;
+.benefit-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 25px;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
-  font-weight: bold;
-  margin: 0 auto 25px;
-  border: 4px solid #2a2a2a;
-  box-shadow: 0 0 0 2px #d4af37;
+  position: relative;
+  border: 2px solid #d4af37;
 }
 
-.step h3 {
+.benefit-icon::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  border-radius: 50%;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.benefit-card:hover .benefit-icon::before {
+  opacity: 1;
+}
+
+.benefit-icon i {
+  font-size: 2rem;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.benefit-card h3 {
   font-size: 1.4rem;
   margin-bottom: 15px;
   color: #fff;
   font-weight: 600;
 }
 
-.step p {
-  color: #ccc;
+.benefit-card p {
+  color: #999;
   line-height: 1.6;
-  font-size: 1.1rem;
-}
-
-/* Advantages Grid */
-.advantages-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 30px;
-}
-
-.advantage-card {
-  background: #2a2a2a;
-  padding: 30px;
-  border-radius: 12px;
-  border: 1px solid #333;
-  transition: all 0.3s ease;
-}
-
-.advantage-card:hover {
-  border-color: #d4af37;
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.1);
-}
-
-.advantage-header {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 15px;
-}
-
-.advantage-icon {
-  font-size: 2.5rem;
-  flex-shrink: 0;
-}
-
-.advantage-header h3 {
-  margin: 0;
-  color: #fff;
-  font-size: 1.3rem;
-  font-weight: 600;
-}
-
-.advantage-card p {
-  color: #ccc;
-  line-height: 1.6;
-  margin: 0;
   font-size: 1rem;
 }
 
-/* For Whom Section */
-.for-whom-section {
-  background: #1a1a1a;
+.benefit-hover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.for-whom-grid {
+.benefit-card:hover .benefit-hover {
+  opacity: 1;
+}
+
+/* Процесс работы */
+.process-timeline {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0;
+  position: relative;
 }
 
-.for-whom-card {
-  background: #2a2a2a;
-  padding: 30px;
-  border-radius: 12px;
-  border: 1px solid #333;
+.process-step {
+  padding: 40px 30px;
+  text-align: center;
+  position: relative;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease;
+}
+
+.process-step.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.step-number {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  border: 2px solid #d4af37;
+  color: #d4af37;
+  border-radius: 50%;
   display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  transition: all 0.3s ease;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 auto 25px;
+  position: relative;
+  z-index: 2;
 }
 
-.for-whom-card:hover {
-  border-color: #d4af37;
-  transform: translateY(-3px);
+.step-content h3 {
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  color: #fff;
+  font-weight: 600;
 }
 
-.for-whom-icon {
+.step-content p {
+  color: #999;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.step-connector {
+  position: absolute;
+  top: 90px;
+  right: -20px;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, #d4af37, transparent);
+  z-index: 1;
+}
+
+/* Особенности */
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.feature-main h2 {
   font-size: 2.5rem;
+  font-weight: 300;
+  margin-bottom: 20px;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.feature-main > p {
+  font-size: 1.2rem;
+  color: #999;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+.feature-highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.highlight-item {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.highlight-item i {
+  font-size: 2rem;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   flex-shrink: 0;
   margin-top: 5px;
 }
 
-.for-whom-content h3 {
-  margin: 0 0 10px 0;
-  color: #fff;
+.highlight-item h4 {
   font-size: 1.2rem;
+  margin-bottom: 8px;
+  color: #fff;
   font-weight: 600;
 }
 
-.for-whom-content p {
-  color: #ccc;
+.highlight-item p {
+  color: #999;
   line-height: 1.5;
-  margin: 0;
   font-size: 0.95rem;
 }
 
-/* CTA Section */
+.feature-visual {
+  position: relative;
+  height: 500px;
+}
+
+.visual-card {
+  position: absolute;
+  background: linear-gradient(145deg, #1a1a1a, #151515);
+  padding: 30px;
+  border-radius: 15px;
+  border: 1px solid #2a2a2a;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s ease;
+}
+
+.card-1 {
+  top: 0;
+  left: 0;
+  width: 70%;
+  z-index: 3;
+}
+
+.card-2 {
+  top: 30%;
+  right: 0;
+  width: 60%;
+  z-index: 2;
+}
+
+.card-3 {
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  z-index: 1;
+}
+
+.visual-card:hover {
+  transform: translateY(-5px);
+  border-color: #d4af37;
+  z-index: 4;
+}
+
+.card-content h4 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.card-content p {
+  color: #999;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+/* CTA секция */
 .cta-section {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-  padding: 100px 20px;
+  padding: 120px 20px;
+  position: relative;
+  background: #0a0a0a;
   text-align: center;
-  border-top: 3px solid #d4af37;
+  overflow: hidden;
+}
+
+.cta-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cta-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
+    linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+}
+
+.cta-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .cta-content h2 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  color: #d4af37;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-size: 3.2rem;
+  font-weight: 300;
+  margin-bottom: 20px;
+  color: #fff;
   letter-spacing: 2px;
 }
 
 .cta-content p {
   font-size: 1.3rem;
-  margin-bottom: 3rem;
-  color: #ccc;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  color: #999;
+  margin-bottom: 50px;
 }
 
-.cta-buttons {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
+/* Иконки (замени на реальные иконки из библиотеки) */
+.icon-user-check:before { content: '✓'; }
+.icon-shield-check:before { content: '🛡'; }
+.icon-briefcase:before { content: '💼'; }
+.icon-trending-up:before { content: '📈'; }
+.icon-file-text:before { content: '📄'; }
+.icon-users:before { content: '👥'; }
+.icon-award:before { content: '⭐'; }
+.icon-target:before { content: '🎯'; }
+.icon-shield:before { content: '🛡'; }
 
 /* Адаптивность */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.5rem;
+@media (max-width: 1024px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 60px;
   }
 
-  .hero-subtitle {
-    font-size: 1.3rem;
+  .feature-visual {
+    height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .title-subline {
+    font-size: 1.2rem;
+    letter-spacing: 4px;
   }
 
   .auth-buttons,
@@ -660,59 +957,62 @@ const getDashboardRoute = () => {
     max-width: 300px;
   }
 
-  .difference-grid,
-  .advantages-grid,
-  .for-whom-grid {
+  .benefits-grid {
     grid-template-columns: 1fr;
   }
 
-  .steps {
+  .process-timeline {
     grid-template-columns: 1fr;
   }
 
-  .welcome-card {
-    padding: 30px 20px;
+  .step-connector {
+    display: none;
   }
 
-  .welcome-card h2 {
-    font-size: 1.5rem;
+  .hero-stats {
+    gap: 40px;
+  }
+
+  .stat-number {
+    font-size: 2rem;
   }
 
   .section-title {
-    font-size: 2rem;
-  }
-
-  .cta-content h2 {
-    font-size: 2rem;
-  }
-
-  .for-whom-card {
-    flex-direction: column;
-    text-align: center;
-    gap: 15px;
+    font-size: 2.2rem;
   }
 }
 
 @media (max-width: 480px) {
   .hero-section {
-    padding: 60px 20px;
+    padding: 100px 20px 60px;
   }
 
   .hero-title {
-    font-size: 2rem;
+    font-size: 2.2rem;
   }
 
-  .difference-section,
-  .how-it-works,
-  .advantages-section,
-  .for-whom-section {
+  .benefits-section,
+  .process-section,
+  .features-section {
     padding: 60px 20px;
   }
 
-  .difference-card,
-  .step,
-  .advantage-card {
-    padding: 25px 20px;
+  .benefit-card {
+    padding: 30px 20px;
+  }
+
+  .cta-content h2 {
+    font-size: 2.2rem;
+  }
+
+  .visual-card {
+    position: relative;
+    width: 100% !important;
+    margin-bottom: 20px;
+  }
+
+  .feature-visual {
+    height: auto;
   }
 }
 </style>

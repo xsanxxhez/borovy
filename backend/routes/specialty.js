@@ -4,7 +4,8 @@ const {
   getSpecialtiesByVakhta,
   getAllSpecialties,
   updateSpecialty,
-  deleteSpecialty
+  deleteSpecialty,
+  getSpecialtyById
 } = require('../controllers/specialtyController');
 const { authenticate, requireRole } = require('../middleware/auth');
 
@@ -18,5 +19,8 @@ router.delete('/:id', authenticate, requireRole(['admin']), deleteSpecialty);
 
 // Публичные роуты
 router.get('/vakhta/:vakhta_id', getSpecialtiesByVakhta);
+
+// ИЗМЕНЕНИЕ: Убираем authenticate для публичного доступа
+router.get('/:id', getSpecialtyById);
 
 module.exports = router;

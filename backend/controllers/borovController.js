@@ -51,6 +51,176 @@ const register = async (req, res) => {
   }
 };
 
+// НОВЫЕ МЕТОДЫ ДЛЯ АНКЕТЫ БОРОВА
+
+// Получение анкеты борова
+const getBorovProfile = async (req, res) => {
+  try {
+    const borov_id = req.user.id;
+
+    const result = await pool.query(`
+      SELECT
+        b.*,
+        bs.*,
+        json_build_object(
+          'about_me', bp.about_me,
+          'specialization', bp.specialization,
+          'experience_years', bp.experience_years,
+          'experience_description', bp.experience_description,
+          'driver_license_category', bp.driver_license_category,
+          'languages', bp.languages,
+          'skills', bp.skills,
+          'education', bp.education,
+          'certifications', bp.certifications,
+          'preferred_work_types', bp.preferred_work_types,
+          'work_radius', bp.work_radius,
+          'has_car', bp.has_car,
+          'has_tools', bp.has_tools,
+          'salary_expectations', bp.salary_expectations,
+          'updated_at', bp.updated_at
+        ) as profile
+      FROM borovs b
+      LEFT JOIN borov_stats bs ON b.id = bs.borov_id
+      LEFT JOIN borov_profiles bp ON b.id = bp.borov_id
+      WHERE b.id = $1
+    `, [borov_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Borov not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Get borov profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Создание/обновление анкеты
+const updateBorovProfile = async (req, res) => {
+  try {
+    const borov_id = req.user.id;
+    const {
+      about_me,
+      specialization,
+      experience_years,
+      experience_description,
+      driver_license_category,
+      languages,
+      skills,
+      education,
+      certifications,
+      preferred_work_types,
+      work_radius,
+      has_car,
+      has_tools,
+      salary_expectations
+    } = req.body;
+
+    // Проверяем существование анкеты
+    const existingProfile = await pool.query(
+      'SELECT id FROM borov_profiles WHERE borov_id = $1',
+      [borov_id]
+    );
+
+    let result;
+
+    if (existingProfile.rows.length > 0) {
+      // Обновляем существующую анкету
+      result = await pool.query(`
+        UPDATE borov_profiles
+        SET
+          about_me = $1,
+          specialization = $2,
+          experience_years = $3,
+          experience_description = $4,
+          driver_license_category = $5,
+          languages = $6,
+          skills = $7,
+          education = $8,
+          certifications = $9,
+          preferred_work_types = $10,
+          work_radius = $11,
+          has_car = $12,
+          has_tools = $13,
+          salary_expectations = $14,
+          updated_at = NOW()
+        WHERE borov_id = $15
+        RETURNING *
+      `, [
+        about_me, specialization, experience_years, experience_description,
+        driver_license_category, languages, skills, education, certifications,
+        preferred_work_types, work_radius, has_car, has_tools, salary_expectations, borov_id
+      ]);
+    } else {
+      // Создаем новую анкету
+      result = await pool.query(`
+        INSERT INTO borov_profiles (
+          borov_id, about_me, specialization, experience_years, experience_description,
+          driver_license_category, languages, skills, education, certifications,
+          preferred_work_types, work_radius, has_car, has_tools, salary_expectations
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        RETURNING *
+      `, [
+        borov_id, about_me, specialization, experience_years, experience_description,
+        driver_license_category, languages, skills, education, certifications,
+        preferred_work_types, work_radius, has_car, has_tools, salary_expectations
+      ]);
+    }
+
+    res.json({
+      message: 'Profile updated successfully',
+      profile: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Update borov profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Получение публичной анкеты
+const getPublicProfile = async (req, res) => {
+  try {
+    const { borov_id } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        b.full_name,
+        b.email,
+        b.phone,
+        bp.about_me,
+        bp.specialization,
+        bp.experience_years,
+        bp.experience_description,
+        bp.driver_license_category,
+        bp.languages,
+        bp.skills,
+        bp.education,
+        bp.certifications,
+        bp.preferred_work_types,
+        bp.work_radius,
+        bp.has_car,
+        bp.has_tools,
+        bp.salary_expectations,
+        bp.updated_at,
+        bs.total_vakhtas_completed,
+        bs.total_work_days
+      FROM borovs b
+      LEFT JOIN borov_profiles bp ON b.id = bp.borov_id
+      LEFT JOIN borov_stats bs ON b.id = bs.borov_id
+      WHERE b.id = $1 AND b.is_active = true
+    `, [borov_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Get public profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 // УЛУЧШЕННЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ ДОСТУПНЫХ ВАХТ
 const getAvailableVakhtas = async (req, res) => {
   try {
@@ -553,5 +723,8 @@ module.exports = {
   joinSpecialty,
   leaveSpecialty,
   getMySpecialties,
-  getCurrentWork
+  getCurrentWork,
+  getPublicProfile,
+  updateBorovProfile,
+  getBorovProfile
 };
