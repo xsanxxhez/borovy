@@ -226,7 +226,7 @@ onMounted(() => {
   // Запуск анимаций
   setTimeout(() => {
     document.querySelector('.coming-soon-content')?.classList.add('animate-in')
-  }, 500)
+  }, 100)
 })
 </script>
 

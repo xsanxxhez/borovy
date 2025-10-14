@@ -119,7 +119,7 @@
               class="btn btn-outline btn-glow"
             >
               <span class="button-content">
-                <span class="button-text">🏁 Завершить</span>
+                <span class="button-text">Отменить запись</span>
               </span>
             </button>
             <nuxt-link
@@ -499,7 +499,7 @@ const quickActions = computed(() => [
 // Методы
 const leaveWork = async () => {
   try {
-    if (!confirm('Вы уверены, что хотите завершить текущую работу?')) return
+    if (!confirm('Вы уверены, что хотите отменить запись на текущую работу?')) return
 
     let endpoint = ''
     if (currentWork.value.type === 'specialty') {
@@ -518,7 +518,7 @@ const leaveWork = async () => {
     }
   } catch (error: any) {
     console.error('Error leaving work:', error)
-    alert(error.data?.error || 'Не удалось завершить работу')
+    alert(error.data?.error || 'Не удалось отменить запись')
   }
 }
 
@@ -592,7 +592,7 @@ onMounted(() => {
   // Анимация появления контента
   setTimeout(() => {
     document.querySelector('.dashboard-content')?.classList.add('animate-in')
-  }, 500)
+  }, 100)
 })
 </script>
 
@@ -801,7 +801,7 @@ onMounted(() => {
   padding: 40px 20px;
   opacity: 0;
   transform: translateY(30px);
-  transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .dashboard-content.animate-in {
