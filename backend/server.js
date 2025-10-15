@@ -102,7 +102,7 @@ app.use('/api/borov', require('./routes/borov'));
 app.use('/api/vakhta', require('./routes/vakhta'));
 app.use('/api/specialties', require('./routes/specialty'));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+//app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -3,24 +3,21 @@ const path = require('path');
 const fs = require('fs');
 
 // Создаем папку для загрузок, если её нет
-const uploadsDir = path.join(__dirname, '../uploads/avatars');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+//const uploadsDir = path.join(__dirname, '../uploads/avatars');
+//if (!fs.existsSync(uploadsDir)) {
+//  fs.mkdirSync(uploadsDir, { recursive: true });
+//}
 
-// Настройка хранилища для multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadsDir);
+    // Временное решение - используем /tmp папку на Vercel
+    cb(null, '/tmp');
   },
   filename: function (req, file, cb) {
-    // Генерируем уникальное имя файла
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const extension = path.extname(file.originalname);
-    cb(null, 'avatar-' + uniqueSuffix + extension);
+    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
-
 // Фильтр файлов
 const fileFilter = (req, file, cb) => {
   // Проверяем тип файла
