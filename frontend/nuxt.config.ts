@@ -2,7 +2,7 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
   typescript: {
-    typeCheck: false, // ВЫКЛЮЧАЕМ проверку
+    typeCheck: false,
     shim: false,
     strict: false
   },
@@ -11,7 +11,12 @@ export default defineNuxtConfig({
       apiBase: process.env.API_URL || 'https://borovy-backend4.vercel.app/api'
     }
   },
-  modules: [],
+  modules: [
+    '@pinia/nuxt'
+  ],
+  imports: {
+    dirs: ['./stores']
+  },
   app: {
     head: {
       title: 'Borovy App',

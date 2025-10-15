@@ -6,10 +6,12 @@
 
 <script setup lang="ts">
 // Инициализируем состояние аутентификации при загрузке приложения
-const authStore = useAuthStore()
-
 onMounted(() => {
-  authStore.initializeAuth()
+  // Используем setTimeout чтобы Pinia успел инициализироваться
+  setTimeout(() => {
+    const authStore = useAuthStore()
+    authStore.initializeAuth()
+  }, 100)
 })
 </script>
 
