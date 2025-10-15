@@ -1,9 +1,8 @@
 export default defineNuxtConfig({
-  devtools: { enabled: true },
-  modules: ['@pinia/nuxt'],
+  ssr: false,
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:3001/api'
+      apiBase: process.env.API_URL || 'https://borovy.vercel.app/api'
     }
   }
 })
