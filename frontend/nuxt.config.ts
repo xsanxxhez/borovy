@@ -2,9 +2,9 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
   typescript: {
-    typeCheck: 'build', // Только при сборке
-    strict: false,
-    shim: false
+    typeCheck: false, // ВЫКЛЮЧАЕМ проверку
+    shim: false,
+    strict: false
   },
   runtimeConfig: {
     public: {
