@@ -7,7 +7,6 @@ export default defineNuxtConfig({
     }
   },
   modules: [],
-  css: ['~/assets/css/main.css'],
   app: {
     head: {
       title: 'Borovy App',
