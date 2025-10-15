@@ -18,8 +18,20 @@
       <div class="floating-element element-5"></div>
     </div>
 
-    <div class="page-container">
+    <div class="mobile-filters-toggle">
+      <button @click="toggleMobileFilters" class="btn btn-primary">
+        <span class="button-content">
+          <span class="button-text">Фильтры</span>
+          <span class="button-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 4H21M3 8H15M3 12H9M7 20L17 20M13 16L17 20M17 20L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+        </span>
+      </button>
+    </div>
 
+    <div class="page-container">
       <!-- Current Work Banner -->
       <div v-if="currentWork.type !== 'none'" class="current-work-banner">
         <div class="banner-glow"></div>
@@ -38,7 +50,7 @@
           </div>
           <button @click="leaveWork" class="btn btn-warning">
             <span class="button-content">
-              <span class="button-text">Завершить</span>
+              <span class="button-text">Отменить запись</span>
               <span class="button-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M6 18L18 6M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -52,7 +64,22 @@
       <!-- Основной контент с фильтрами -->
       <div class="main-content">
         <!-- Боковые фильтры -->
-        <div class="filters-sidebar">
+        <div class="filters-sidebar" :class="{ 'mobile-open': showMobileFilters }" ref="filtersSidebar">
+          <!-- Заголовок для мобильной версии -->
+          <div class="mobile-filters-header">
+            <h3>Фильтры</h3>
+            <button @click="closeMobileFilters" class="btn btn-outline btn-sm close-filters-btn">
+              <span class="button-content">
+                <span class="button-text">Закрыть</span>
+                <span class="button-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 18L18 6M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </span>
+              </span>
+            </button>
+          </div>
+
           <div class="filters-header">
             <h3>Фильтры</h3>
             <button @click="clearFilters" class="btn btn-outline btn-sm">
@@ -91,7 +118,7 @@
               </div>
             </div>
 
-            <!-- Локация -->
+            <!-- Регион/город -->
             <div class="filter-group">
               <div class="filter-label">
                 <div class="filter-icon">
@@ -110,7 +137,55 @@
               </select>
             </div>
 
-            <!-- Зарплата -->
+            <!-- Длительность (улучшенный ползунок) -->
+            <div class="filter-group">
+              <div class="filter-label">
+                <div class="filter-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span>Длительность</span>
+              </div>
+              <div class="range-slider-group">
+                <div class="range-values">
+                  <span class="range-value-min">От: {{ filters.duration[0] }} дн.</span>
+                  <span class="range-value-max">До: {{ filters.duration[1] }} дн.</span>
+                </div>
+                <div class="custom-range-slider">
+                  <div class="range-track">
+                    <div class="range-progress" :style="durationProgressStyle"></div>
+                  </div>
+                  <input
+                    type="range"
+                    v-model.number="filters.duration[0]"
+                    :min="durationRange.min"
+                    :max="durationRange.max"
+                    step="1"
+                    class="range-input range-min"
+                    @input="updateDurationRange"
+                    @mousedown="setActiveSlider('duration')"
+                  >
+                  <input
+                    type="range"
+                    v-model.number="filters.duration[1]"
+                    :min="durationRange.min"
+                    :max="durationRange.max"
+                    step="1"
+                    class="range-input range-max"
+                    @input="updateDurationRange"
+                    @mousedown="setActiveSlider('duration')"
+                  >
+                </div>
+                <div class="range-labels">
+                  <span>{{ durationRange.min }} дн.</span>
+                  <span>{{ durationRange.max }} дн.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Зарплата (улучшенный ползунок) -->
             <div class="filter-group">
               <div class="filter-label">
                 <div class="filter-icon">
@@ -120,189 +195,63 @@
                 </div>
                 <span>Зарплата</span>
               </div>
-              <select v-model="filters.salary" class="filter-select">
-                <option value="">Любая зарплата</option>
-                <option value="4000">от 4,000 ₽</option>
-                <option value="5000">от 5,000 ₽</option>
-                <option value="6000">от 6,000 ₽</option>
-                <option value="7000">от 7,000 ₽</option>
-                <option value="8000">от 8,000 ₽</option>
-              </select>
+              <div class="range-slider-group">
+                <div class="range-values">
+                  <span class="range-value-min">От: {{ formatSalary(filters.salary[0]) }}</span>
+                  <span class="range-value-max">До: {{ formatSalary(filters.salary[1]) }}</span>
+                </div>
+                <div class="custom-range-slider">
+                  <div class="range-track">
+                    <div class="range-progress" :style="salaryProgressStyle"></div>
+                  </div>
+                  <input
+                    type="range"
+                    v-model.number="filters.salary[0]"
+                    :min="salaryRange.min"
+                    :max="salaryRange.max"
+                    step="1000"
+                    class="range-input range-min"
+                    @input="updateSalaryRange"
+                    @mousedown="setActiveSlider('salary')"
+                  >
+                  <input
+                    type="range"
+                    v-model.number="filters.salary[1]"
+                    :min="salaryRange.min"
+                    :max="salaryRange.max"
+                    step="1000"
+                    class="range-input range-max"
+                    @input="updateSalaryRange"
+                    @mousedown="setActiveSlider('salary')"
+                  >
+                </div>
+                <div class="range-labels">
+                  <span>{{ formatSalary(salaryRange.min) }}</span>
+                  <span>{{ formatSalary(salaryRange.max) }}</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Тип занятости -->
+            <!-- Тип работы -->
             <div class="filter-group">
               <div class="filter-label">
                 <div class="filter-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M20 6H16V4C16 2.89 15.11 2 14 2H10C8.89 2 8 2.89 8 4V6H4C2.89 6 2.01 6.89 2.01 8L2 19C2 20.11 2.89 21 4 21H20C21.11 21 22 20.11 22 19V8C22 6.89 21.11 6 20 6ZM14 6H10V4H14V6Z" fill="currentColor"/>
                   </svg>
                 </div>
-                <span>Тип занятости</span>
+                <span>Тип работы</span>
               </div>
               <div class="checkbox-group">
                 <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.employmentType" value="full">
+                  <input type="checkbox" v-model="filters.workType" value="one-time">
                   <span class="checkmark"></span>
-                  Полный день
+                  Разовая
                 </label>
                 <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.employmentType" value="part">
+                  <input type="checkbox" v-model="filters.workType" value="regular">
                   <span class="checkmark"></span>
-                  Частичная занятость
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.employmentType" value="shift">
-                  <span class="checkmark"></span>
-                  Сменный график
-                </label>
-              </div>
-            </div>
-
-            <!-- Опыт работы -->
-            <div class="filter-group">
-              <div class="filter-label">
-                <div class="filter-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M19.4 15C19.2669 15.3031 19.1338 15.6062 19.0007 15.9094C18.6131 16.7484 18.2255 17.5875 17.8379 18.4266C17.322 19.5497 16.8061 20.6728 16.2902 21.7959C15.9193 22.6172 15.0879 23.1484 14.186 23.1484H9.814C8.91211 23.1484 8.08066 22.6172 7.70977 21.7959C7.19385 20.6728 6.67793 19.5497 6.16201 18.4266C5.77441 17.5875 5.3868 16.7484 4.9992 15.9094C4.86613 15.6062 4.73306 15.3031 4.6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M4.6 9C4.73306 8.69687 4.86613 8.39375 4.9992 8.09063C5.3868 7.25156 5.77441 6.4125 6.16201 5.57344C6.67793 4.45031 7.19385 3.32719 7.70977 2.20406C8.08066 1.38281 8.91211 0.851562 9.814 0.851562H14.186C15.0879 0.851562 15.9193 1.38281 16.2902 2.20406C16.8061 3.32719 17.322 4.45031 17.8379 5.57344C18.2255 6.4125 18.6131 7.25156 19.0007 8.09063C19.1338 8.39375 19.2669 8.69687 19.4 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span>Опыт работы</span>
-              </div>
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.experience" value="none">
-                  <span class="checkmark"></span>
-                  Без опыта
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.experience" value="junior">
-                  <span class="checkmark"></span>
-                  До 1 года
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.experience" value="middle">
-                  <span class="checkmark"></span>
-                  1-3 года
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.experience" value="senior">
-                  <span class="checkmark"></span>
-                  Более 3 лет
-                </label>
-              </div>
-            </div>
-
-            <!-- Сфера деятельности -->
-            <div class="filter-group">
-              <div class="filter-label">
-                <div class="filter-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span>Сфера деятельности</span>
-              </div>
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="production">
-                  <span class="checkmark"></span>
-                  Производство
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="construction">
-                  <span class="checkmark"></span>
-                  Строительство
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="logistics">
-                  <span class="checkmark"></span>
-                  Логистика
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="services">
-                  <span class="checkmark"></span>
-                  Услуги
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="trade">
-                  <span class="checkmark"></span>
-                  Торговля
-                </label>
-              </div>
-            </div>
-
-            <!-- Уровень квалификации -->
-            <div class="filter-group">
-              <div class="filter-label">
-                <div class="filter-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M19.4 15C19.2669 15.3031 19.1338 15.6062 19.0007 15.9094C18.6131 16.7484 18.2255 17.5875 17.8379 18.4266C17.322 19.5497 16.8061 20.6728 16.2902 21.7959C15.9193 22.6172 15.0879 23.1484 14.186 23.1484H9.814C8.91211 23.1484 8.08066 22.6172 7.70977 21.7959C7.19385 20.6728 6.67793 19.5497 6.16201 18.4266C5.77441 17.5875 5.3868 16.7484 4.9992 15.9094C4.86613 15.6062 4.73306 15.3031 4.6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M4.6 9C4.73306 8.69687 4.86613 8.39375 4.9992 8.09063C5.3868 7.25156 5.77441 6.4125 6.16201 5.57344C6.67793 4.45031 7.19385 3.32719 7.70977 2.20406C8.08066 1.38281 8.91211 0.851562 9.814 0.851562H14.186C15.0879 0.851562 15.9193 1.38281 16.2902 2.20406C16.8061 3.32719 17.322 4.45031 17.8379 5.57344C18.2255 6.4125 18.6131 7.25156 19.0007 8.09063C19.1338 8.39375 19.2669 8.69687 19.4 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span>Уровень квалификации</span>
-              </div>
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.qualification" value="trainee">
-                  <span class="checkmark"></span>
-                  Стажер
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.qualification" value="worker">
-                  <span class="checkmark"></span>
-                  Рабочий
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.qualification" value="specialist">
-                  <span class="checkmark"></span>
-                  Специалист
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.qualification" value="master">
-                  <span class="checkmark"></span>
-                  Мастер
-                </label>
-              </div>
-            </div>
-
-            <!-- Дополнительные условия -->
-            <div class="filter-group">
-              <div class="filter-label">
-                <div class="filter-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span>Дополнительно</span>
-              </div>
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.benefits" value="accommodation">
-                  <span class="checkmark"></span>
-                  Предоставление жилья
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.benefits" value="food">
-                  <span class="checkmark"></span>
-                  Питание
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.benefits" value="transport">
-                  <span class="checkmark"></span>
-                  Транспорт
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.benefits" value="training">
-                  <span class="checkmark"></span>
-                  Обучение
+                  Регулярная
                 </label>
               </div>
             </div>
@@ -363,18 +312,17 @@
               <div class="enterprise-header" @click="toggleEnterprise(enterprise.id)">
                 <div class="enterprise-badge">
                   <div class="badge-icon">
-                    <svg width="16" height="16"  viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21Z" stroke="currentColor" stroke-width="2"/>
                       <path d="M9 8H7V16H9V8Z" fill="currentColor"/>
                       <path d="M13 8H11V16H13V8Z" fill="currentColor"/>
                       <path d="M17 8H15V16H17V8Z" fill="currentColor"/>
                     </svg>
                   </div>
-
                 </div>
 
                 <div class="enterprise-main">
-                  <h3 class="enterprise-title">{{      enterprise.title }}</h3>
+                  <h3 class="enterprise-title">{{ enterprise.title }}</h3>
 
                   <div class="enterprise-meta">
                     <div class="meta-item">
@@ -604,17 +552,78 @@ const showSuccess = ref(false)
 const joinedSpecialtyTitle = ref('')
 const currentWork = ref({ type: 'none', work: null })
 const searchFocused = ref(false)
+const showMobileFilters = ref(false)
+const activeSlider = ref<string | null>(null)
 
+// Диапазоны для ползунков
+const durationRange = {
+  min: 1,
+  max: 30
+}
+
+const salaryRange = {
+  min: 1000,
+  max: 20000
+}
+
+// Обновленные фильтры
 const filters = reactive({
   search: '',
   location: '',
-  salary: '',
-  employmentType: [],
-  experience: [],
-  industry: [],
-  qualification: [],
-  benefits: []
+  duration: [durationRange.min, durationRange.max],
+  salary: [salaryRange.min, salaryRange.max],
+  workType: []
 })
+
+// Вычисляемые свойства для стилей прогресса
+const durationProgressStyle = computed(() => {
+  const min = filters.duration[0]
+  const max = filters.duration[1]
+  const minPercent = ((min - durationRange.min) / (durationRange.max - durationRange.min)) * 100
+  const maxPercent = ((max - durationRange.min) / (durationRange.max - durationRange.min)) * 100
+  return {
+    left: `${minPercent}%`,
+    width: `${maxPercent - minPercent}%`
+  }
+})
+
+const salaryProgressStyle = computed(() => {
+  const min = filters.salary[0]
+  const max = filters.salary[1]
+  const minPercent = ((min - salaryRange.min) / (salaryRange.max - salaryRange.min)) * 100
+  const maxPercent = ((max - salaryRange.min) / (salaryRange.max - salaryRange.min)) * 100
+  return {
+    left: `${minPercent}%`,
+    width: `${maxPercent - minPercent}%`
+  }
+})
+
+// Функции для обновления диапазонов
+const updateDurationRange = () => {
+  // Убедимся, что min <= max
+  if (filters.duration[0] > filters.duration[1]) {
+    if (activeSlider.value === 'duration') {
+      filters.duration[0] = filters.duration[1]
+    } else {
+      filters.duration[1] = filters.duration[0]
+    }
+  }
+}
+
+const updateSalaryRange = () => {
+  // Убедимся, что min <= max
+  if (filters.salary[0] > filters.salary[1]) {
+    if (activeSlider.value === 'salary') {
+      filters.salary[0] = filters.salary[1]
+    } else {
+      filters.salary[1] = filters.salary[0]
+    }
+  }
+}
+
+const setActiveSlider = (type: string) => {
+  activeSlider.value = type
+}
 
 // Загрузка предприятий
 const loadEnterprises = async () => {
@@ -645,7 +654,7 @@ const loadEnterprises = async () => {
   }
 }
 
-// Фильтрация
+// Фильтрация с обновленными условиями
 const filteredEnterprises = computed(() => {
   let filtered = enterprises.value
 
@@ -666,37 +675,32 @@ const filteredEnterprises = computed(() => {
     )
   }
 
-  if (filters.salary) {
+  // Фильтрация по длительности
+  if (filters.duration[0] > durationRange.min || filters.duration[1] < durationRange.max) {
+    filtered = filtered.filter(enterprise => {
+      const startDate = new Date(enterprise.start_date)
+      const endDate = new Date(enterprise.end_date)
+      const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+
+      return durationDays >= filters.duration[0] && durationDays <= filters.duration[1]
+    })
+  }
+
+  // Фильтрация по зарплате
+  if (filters.salary[0] > salaryRange.min || filters.salary[1] < salaryRange.max) {
     filtered = filtered.filter(enterprise =>
       enterprise.specialties?.some((s: any) =>
-        s.salary >= parseInt(filters.salary)
+        s.salary >= filters.salary[0] && s.salary <= filters.salary[1]
       )
     )
   }
 
-  // Фильтрация по типу занятости
-  if (filters.employmentType.length > 0) {
-    // Реализация зависит от структуры данных
-  }
-
-  // Фильтрация по опыту работы
-  if (filters.experience.length > 0) {
-    // Реализация зависит от структуры данных
-  }
-
-  // Фильтрация по сфере деятельности
-  if (filters.industry.length > 0) {
-    // Реализация зависит от структуры данных
-  }
-
-  // Фильтрация по уровню квалификации
-  if (filters.qualification.length > 0) {
-    // Реализация зависит от структуры данных
-  }
-
-  // Фильтрация по дополнительным условиям
-  if (filters.benefits.length > 0) {
-    // Реализация зависит от структуры данных
+  // Фильтрация по типу работы
+  if (filters.workType.length > 0) {
+    filtered = filtered.filter(enterprise => {
+      const enterpriseWorkType = enterprise.work_type || 'regular'
+      return filters.workType.includes(enterpriseWorkType)
+    })
   }
 
   return filtered
@@ -713,6 +717,32 @@ const totalSpecialties = computed(() => {
     total + (enterprise.specialties?.length || 0), 0
   )
 })
+
+// Функции для мобильных фильтров
+const toggleMobileFilters = () => {
+  showMobileFilters.value = !showMobileFilters.value
+}
+
+const closeMobileFilters = () => {
+  showMobileFilters.value = false
+}
+
+// Закрывать фильтры при изменении размера окна на десктоп
+const handleResize = () => {
+  if (window.innerWidth > 1024) {
+    showMobileFilters.value = false
+  }
+}
+
+// Закрытие фильтров по клику вне области
+const filtersSidebar = ref(null)
+
+const handleClickOutside = (event: Event) => {
+  if (filtersSidebar.value && !filtersSidebar.value.contains(event.target) &&
+      !event.target.closest('.mobile-filters-toggle')) {
+    closeMobileFilters()
+  }
+}
 
 // Действия
 const toggleEnterprise = (enterpriseId: number) => {
@@ -779,12 +809,9 @@ const clearFilters = () => {
   Object.assign(filters, {
     search: '',
     location: '',
-    salary: '',
-    employmentType: [],
-    experience: [],
-    industry: [],
-    qualification: [],
-    benefits: []
+    duration: [durationRange.min, durationRange.max],
+    salary: [salaryRange.min, salaryRange.max],
+    workType: []
   })
 }
 
@@ -809,8 +836,17 @@ const getPlacesClass = (freePlaces: number) => {
 
 onMounted(() => {
   loadEnterprises()
+  window.addEventListener('resize', handleResize)
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
+
+
 
 <style scoped>
 .enterprises-page {
@@ -2159,6 +2195,497 @@ onMounted(() => {
 
   .specialties-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.mobile-filters-toggle {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+  display: none;
+}
+
+.mobile-filters-toggle .btn {
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+  border-radius: 50px;
+  padding: 16px 24px;
+}
+
+/* Заголовок фильтров для мобильной версии */
+.mobile-filters-header {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.mobile-filters-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.4rem;
+}
+
+.close-filters-btn {
+  display: none;
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .mobile-filters-toggle {
+    display: block;
+  }
+
+  .filters-sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 85%;
+    max-width: 400px;
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+    border-right: 1px solid rgba(212, 175, 55, 0.2);
+    z-index: 1001;
+    transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow-y: auto;
+    padding: 25px;
+  }
+
+  .filters-sidebar.mobile-open {
+    left: 0;
+  }
+
+  .mobile-filters-header {
+    display: flex;
+  }
+
+  .close-filters-btn {
+    display: inline-flex;
+  }
+
+  /* Затемнение фона при открытых фильтрах */
+  .filters-sidebar.mobile-open::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: -1;
+  }
+
+  /* Скрываем обычный заголовок на мобильных */
+  .filters-header {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .filters-sidebar {
+    width: 90%;
+  }
+
+  .mobile-filters-toggle {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .mobile-filters-toggle .btn {
+    padding: 14px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Анимация для кнопки фильтров */
+.mobile-filters-toggle .btn {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.6);
+  }
+  100% {
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+  }
+}
+.range-slider-group {
+  margin-top: 10px;
+}
+
+.range-values {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.range-value-min,
+.range-value-max {
+  background: rgba(212, 175, 55, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  font-weight: 500;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.custom-range-slider {
+  position: relative;
+  height: 24px;
+  margin: 15px 0;
+  touch-action: none;
+}
+
+.range-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transform: translateY(-50%);
+  overflow: hidden;
+}
+
+.range-progress {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.range-input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  outline: none;
+}
+
+.range-input::-webkit-slider-thumb {
+  pointer-events: all;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d4af37;
+  border: 2px solid #0a0a0a;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow:
+    0 2px 8px rgba(212, 175, 55, 0.4),
+    0 0 0 0px rgba(212, 175, 55, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow:
+    0 4px 12px rgba(212, 175, 55, 0.6),
+    0 0 0 4px rgba(212, 175, 55, 0.2);
+}
+
+.range-input::-webkit-slider-thumb:active {
+  transform: scale(1.1);
+  box-shadow:
+    0 3px 10px rgba(212, 175, 55, 0.5),
+    0 0 0 6px rgba(212, 175, 55, 0.15);
+}
+
+.range-input::-moz-range-thumb {
+  pointer-events: all;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d4af37;
+  border: 2px solid #0a0a0a;
+  cursor: pointer;
+  box-shadow:
+    0 2px 8px rgba(212, 175, 55, 0.4),
+    0 0 0 0px rgba(212, 175, 55, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.range-input::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow:
+    0 4px 12px rgba(212, 175, 55, 0.6),
+    0 0 0 4px rgba(212, 175, 55, 0.2);
+}
+
+.range-input::-moz-range-thumb:active {
+  transform: scale(1.1);
+  box-shadow:
+    0 3px 10px rgba(212, 175, 55, 0.5),
+    0 0 0 6px rgba(212, 175, 55, 0.15);
+}
+
+.range-input::-webkit-slider-track {
+  background: transparent;
+  border: none;
+  height: 6px;
+  -webkit-appearance: none;
+}
+
+.range-input::-moz-range-track {
+  background: transparent;
+  border: none;
+  height: 6px;
+}
+
+/* Убираем стандартные стили для Firefox */
+.range-input::-moz-focus-outer {
+  border: 0;
+}
+
+/* Анимация для активного ползунка */
+.range-input:active::-webkit-slider-thumb {
+  animation: thumb-pulse 1.5s infinite;
+}
+
+.range-input:active::-moz-range-thumb {
+  animation: thumb-pulse 1.5s infinite;
+}
+
+@keyframes thumb-pulse {
+  0%, 100% {
+    box-shadow:
+      0 2px 8px rgba(212, 175, 55, 0.4),
+      0 0 0 0px rgba(212, 175, 55, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 2px 8px rgba(212, 175, 55, 0.4),
+      0 0 0 4px rgba(212, 175, 55, 0.2);
+  }
+}
+
+/* Улучшенная адаптивность для ползунков */
+@media (max-width: 768px) {
+  .custom-range-slider {
+    height: 28px;
+    margin: 20px 0;
+  }
+
+  .range-input::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+  }
+
+  .range-input::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+  }
+
+  .range-track {
+    height: 8px;
+  }
+
+  .range-values {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .range-value-min,
+  .range-value-max {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .custom-range-slider {
+    height: 32px;
+  }
+
+  .range-input::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .range-input::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .range-track {
+    height: 8px;
+  }
+}
+
+/* Улучшения для touch-устройств */
+@media (hover: none) and (pointer: coarse) {
+  .range-input::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .range-input::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .custom-range-slider {
+    height: 32px;
+  }
+}
+
+/* Подсветка при фокусе для доступности */
+.range-input:focus::-webkit-slider-thumb {
+  outline: 2px solid rgba(212, 175, 55, 0.5);
+  outline-offset: 2px;
+}
+
+.range-input:focus::-moz-range-thumb {
+  outline: 2px solid rgba(212, 175, 55, 0.5);
+  outline-offset: 2px;
+}
+
+
+/* Анимация для кнопки фильтров */
+.mobile-filters-toggle .btn {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.6);
+  }
+  100% {
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+  }
+}
+
+.custom-range-slider {
+  position: relative;
+  height: 20px;
+  margin: 20px 0;
+}
+
+.range-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transform: translateY(-50%);
+}
+
+.range-progress {
+  position: absolute;
+  height: 6px;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  border-radius: 3px;
+  top: 0;
+}
+
+.range-input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.range-input::-webkit-slider-thumb {
+  pointer-events: all;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d4af37;
+  border: 2px solid #0a0a0a;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+  transition: all 0.3s ease;
+}
+
+.range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.6);
+}
+
+.range-input::-moz-range-thumb {
+  pointer-events: all;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d4af37;
+  border: 2px solid #0a0a0a;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+  transition: all 0.3s ease;
+}
+
+.range-input::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.6);
+}
+
+.range-input::-webkit-slider-track {
+  background: transparent;
+  border: none;
+  height: 6px;
+}
+
+.range-input::-moz-range-track {
+  background: transparent;
+  border: none;
+  height: 6px;
+}
+
+/* Убираем стандартные стили для Firefox */
+.range-input::-moz-focus-outer {
+  border: 0;
+}
+
+/* Адаптивность для ползунков */
+@media (max-width: 480px) {
+  .range-input::-webkit-slider-thumb {
+    width: 18px;
+    height: 18px;
+  }
+
+  .range-input::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
   }
 }
 </style>

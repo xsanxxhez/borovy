@@ -310,6 +310,7 @@
                         </svg>
                         <span>Загрузить фото</span>
                       </div>
+
                     </div>
                     <input
                       ref="fileInput"
@@ -323,7 +324,9 @@
                       <p>Форматы: JPG, PNG, WebP</p>
                     </div>
                   </div>
+
                 </div>
+
               </div>
 
               <!-- О себе -->
@@ -433,7 +436,7 @@
                         v-model="editForm.driver_license_category"
                         class="checkbox-input"
                       >
-                      <span class="checkbox-custom"></span>
+                      <span class="form-checkbox"></span>
                       {{ category }}
                     </label>
                   </div>
@@ -531,7 +534,7 @@
                   <div class="form-group">
                     <label class="checkbox-label large">
                       <input type="checkbox" v-model="editForm.has_car" class="checkbox-input">
-                      <span class="checkbox-custom"></span>
+                      <span class="form-checkbox"></span>
                       <div class="checkbox-text">
                         <div class="checkbox-title">Личный автомобиль</div>
                         <div class="checkbox-description">Доступен для работы</div>
@@ -541,7 +544,7 @@
                   <div class="form-group">
                     <label class="checkbox-label large">
                       <input type="checkbox" v-model="editForm.has_tools" class="checkbox-input">
-                      <span class="checkbox-custom"></span>
+                      <span class="form-checkbox"></span>
                       <div class="checkbox-text">
                         <div class="checkbox-title">Собственные инструменты</div>
                         <div class="checkbox-description">Есть необходимое оборудование</div>
@@ -826,12 +829,12 @@ const cancelEditing = () => {
 }
 
 const saveProfile = async () => {
-  submitted.value = true
+  submitted.value = true;
 
   // Валидация языков
   const invalidLanguages = editForm.languages.some(lang =>
     (lang.language && !lang.level) || (!lang.language && lang.level)
-  )
+  );
 
   if (invalidLanguages) {
     error.value = 'Заполните все выбранные языки'
@@ -841,6 +844,25 @@ const saveProfile = async () => {
   try {
     loading.value = true
     error.value = ''
+
+    // Сначала загружаем аватар, если есть новый файл
+    let finalAvatarUrl = profile.value.avatar_url;
+
+    if (avatarFile.value) {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile.value);
+
+      const avatarResponse = await $fetch('http://localhost:3001/api/borov/avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`,
+          // Не устанавливаем Content-Type, браузер сделает это сам
+        },
+        body: formData
+      });
+
+      finalAvatarUrl = avatarResponse.avatar_url;
+    }
 
     // Фильтруем пустые языки и преобразуем в объект
     const languagesObj = editForm.languages.reduce((acc, { language, level }) => {
@@ -855,29 +877,24 @@ const saveProfile = async () => {
       languages: languagesObj
     }
 
-    // Если есть новый аватар, загружаем его отдельно
-    if (avatarFile.value) {
-      const formData = new FormData()
-      formData.append('avatar', avatarFile.value)
-
-      await $fetch('http://localhost:3001/api/borov/profile/avatar', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authStore.token}`,
-        },
-        body: formData
-      })
-    }
-
+    // Обновляем профиль
     await $fetch('http://localhost:3001/api/borov/profile', {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${authStore.token}` },
       body: payload
     })
 
+    // Обновляем локальные данные
+    if (finalAvatarUrl) {
+      profile.value.avatar_url = finalAvatarUrl;
+    }
+
     message.value = 'Профиль успешно обновлен'
     isEditing.value = false
     submitted.value = false
+    avatarFile.value = null; // Сбрасываем файл после успешной загрузки
+
+    // Перезагружаем профиль для получения актуальных данных
     await loadProfile()
 
     setTimeout(() => {
@@ -926,6 +943,55 @@ const handleAvatarUpload = (event: Event) => {
     reader.readAsDataURL(file)
   }
 }
+const uploadAvatar = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const response = await $fetch('http://localhost:3001/api/borov/avatar', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        // Не устанавливаем Content-Type, браузер сделает это сам с boundary
+      },
+      body: formData
+    });
+
+    return response.avatar_url;
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    throw error;
+  }
+};
+
+// Добавьте этот метод в секцию methods вашего Vue компонента
+const deleteAvatar = async () => {
+  try {
+    await $fetch('http://localhost:3001/api/borov/avatar', {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    });
+
+    // Обновляем локальные данные
+    profile.value.avatar_url = '';
+    avatarPreview.value = '';
+    avatarFile.value = null;
+
+    message.value = 'Аватар успешно удален';
+
+    setTimeout(() => {
+      message.value = '';
+    }, 5000);
+  } catch (err: any) {
+    console.error('Error deleting avatar:', err);
+    error.value = err.data?.error || 'Ошибка удаления аватарки';
+
+    setTimeout(() => {
+      error.value = '';
+    }, 5000);
+  }
+};
+
 
 const addSkill = () => {
   const skill = newSkill.value.trim()
@@ -1124,6 +1190,23 @@ onMounted(() => {
   top: 80%;
   right: 20%;
   animation-delay: -3s;
+}
+.btn-danger {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(244, 67, 54, 0.2);
+  transform: translateY(-2px);
+}
+
+.avatar-upload-actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
 }
 
 @keyframes float-element {
@@ -1890,39 +1973,14 @@ onMounted(() => {
 }
 
 .checkbox-input {
-  display: none;
+
 }
 
-.checkbox-custom {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(212, 175, 55, 0.5);
-  border-radius: 4px;
-  position: relative;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
 
 .checkbox-label.large .checkbox-custom {
   margin-top: 2px;
 }
 
-.checkbox-input:checked + .checkbox-custom {
-  background: rgba(212, 175, 55, 0.2);
-  border-color: #d4af37;
-}
-
-.checkbox-input:checked + .checkbox-custom::after {
-  content: '';
-  position: absolute;
-  left: 5px;
-  top: 1px;
-  width: 6px;
-  height: 12px;
-  border: solid #d4af37;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
 
 /* Языки */
 .languages-list {

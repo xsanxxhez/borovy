@@ -69,7 +69,7 @@ app.use('/api/vakhta', require('./routes/vakhta'));
 // Добавьте после других роутов
 app.use('/api/specialties', require('./routes/specialty'));
 
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });

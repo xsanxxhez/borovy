@@ -5,7 +5,6 @@
       <div class="parallax-layer layer-1"></div>
       <div class="parallax-layer layer-2"></div>
       <div class="parallax-layer layer-3"></div>
-      <div class="particles-container" id="particles-js"></div>
       <div class="gradient-overlay"></div>
     </div>
 
@@ -14,18 +13,46 @@
       <div class="floating-element element-1"></div>
       <div class="floating-element element-2"></div>
       <div class="floating-element element-3"></div>
-      <div class="floating-element element-4"></div>
-      <div class="floating-element element-5"></div>
+    </div>
+
+    <!-- Кнопка мобильных фильтров -->
+    <div class="mobile-filters-toggle">
+      <button @click="toggleMobileFilters" class="btn btn-primary">
+        <span class="button-content">
+          <span class="button-text">Фильтры</span>
+          <span class="button-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 4H21M3 8H15M3 12H9M7 20L17 20M13 16L17 20M17 20L13 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+        </span>
+      </button>
     </div>
 
     <div class="page-container">
+      <!-- Заголовок страницы -->
 
 
 
       <!-- Основной контент с фильтрами -->
       <div class="main-content">
         <!-- Боковые фильтры -->
-        <div class="filters-sidebar">
+        <div class="filters-sidebar" :class="{ 'mobile-open': showMobileFilters }" ref="filtersSidebar">
+          <!-- Заголовок для мобильной версии -->
+          <div class="mobile-filters-header">
+            <h3>Фильтры</h3>
+            <button @click="closeMobileFilters" class="btn btn-outline btn-sm close-filters-btn">
+              <span class="button-content">
+                <span class="button-text">Закрыть</span>
+                <span class="button-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 18L18 6M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </span>
+              </span>
+            </button>
+          </div>
+
           <div class="filters-header">
             <h3>Фильтры</h3>
             <button @click="clearFilters" class="btn btn-outline btn-sm">
@@ -55,7 +82,7 @@
                 <input
                   v-model="filters.search"
                   type="text"
-                  placeholder="Название специальности или предприятия..."
+                  placeholder="Название, предприятие..."
                   class="search-input"
                   @focus="searchFocused = true"
                   @blur="searchFocused = false"
@@ -64,7 +91,7 @@
               </div>
             </div>
 
-            <!-- Локация -->
+            <!-- Город -->
             <div class="filter-group">
               <div class="filter-label">
                 <div class="filter-icon">
@@ -83,7 +110,7 @@
               </select>
             </div>
 
-            <!-- Зарплата -->
+            <!-- Зарплата (улучшенный ползунок) -->
             <div class="filter-group">
               <div class="filter-label">
                 <div class="filter-icon">
@@ -91,33 +118,91 @@
                     <path d="M12 1V23M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
-                <span>Зарплата от</span>
+                <span>Зарплата</span>
               </div>
-              <select v-model="filters.minSalary" class="filter-select">
-                <option value="">Любая</option>
-                <option value="4000">4 000 ₽</option>
-                <option value="5000">5 000 ₽</option>
-                <option value="6000">6 000 ₽</option>
-                <option value="7000">7 000 ₽</option>
-                <option value="8000">8 000 ₽</option>
-              </select>
+              <div class="range-slider-group">
+                <div class="range-values">
+                  <span class="range-value-min">От: {{ formatSalary(filters.salary[0]) }}</span>
+                  <span class="range-value-max">До: {{ formatSalary(filters.salary[1]) }}</span>
+                </div>
+                <div class="custom-range-slider">
+                  <div class="range-track">
+                    <div class="range-progress" :style="salaryProgressStyle"></div>
+                  </div>
+                  <input
+                    type="range"
+                    v-model.number="filters.salary[0]"
+                    :min="salaryRange.min"
+                    :max="salaryRange.max"
+                    step="1000"
+                    class="range-input range-min"
+                    @input="updateSalaryRange"
+                    @mousedown="setActiveSlider('salary')"
+                  >
+                  <input
+                    type="range"
+                    v-model.number="filters.salary[1]"
+                    :min="salaryRange.min"
+                    :max="salaryRange.max"
+                    step="1000"
+                    class="range-input range-max"
+                    @input="updateSalaryRange"
+                    @mousedown="setActiveSlider('salary')"
+                  >
+                </div>
+                <div class="range-labels">
+                  <span>{{ formatSalary(salaryRange.min) }}</span>
+                  <span>{{ formatSalary(salaryRange.max) }}</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Дата начала -->
+            <!-- Длительность (улучшенный ползунок) -->
             <div class="filter-group">
               <div class="filter-label">
                 <div class="filter-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
-                <span>Дата начала</span>
+                <span>Длительность</span>
               </div>
-              <select v-model="filters.startDate" class="filter-select">
-                <option value="">Любая дата</option>
-                <option value="week">В течение недели</option>
-                <option value="month">В течение месяца</option>
-              </select>
+              <div class="range-slider-group">
+                <div class="range-values">
+                  <span class="range-value-min">От: {{ filters.duration[0] }} дн.</span>
+                  <span class="range-value-max">До: {{ filters.duration[1] }} дн.</span>
+                </div>
+                <div class="custom-range-slider">
+                  <div class="range-track">
+                    <div class="range-progress" :style="durationProgressStyle"></div>
+                  </div>
+                  <input
+                    type="range"
+                    v-model.number="filters.duration[0]"
+                    :min="durationRange.min"
+                    :max="durationRange.max"
+                    step="1"
+                    class="range-input range-min"
+                    @input="updateDurationRange"
+                    @mousedown="setActiveSlider('duration')"
+                  >
+                  <input
+                    type="range"
+                    v-model.number="filters.duration[1]"
+                    :min="durationRange.min"
+                    :max="durationRange.max"
+                    step="1"
+                    class="range-input range-max"
+                    @input="updateDurationRange"
+                    @mousedown="setActiveSlider('duration')"
+                  >
+                </div>
+                <div class="range-labels">
+                  <span>{{ durationRange.min }} дн.</span>
+                  <span>{{ durationRange.max }} дн.</span>
+                </div>
+              </div>
             </div>
 
             <!-- Тип занятости -->
@@ -125,8 +210,7 @@
               <div class="filter-label">
                 <div class="filter-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <span>Тип занятости</span>
@@ -140,12 +224,12 @@
                 <label class="checkbox-label">
                   <input type="checkbox" v-model="filters.employmentType" value="part">
                   <span class="checkmark"></span>
-                  Частичная занятость
+                  Частичная
                 </label>
                 <label class="checkbox-label">
                   <input type="checkbox" v-model="filters.employmentType" value="shift">
                   <span class="checkmark"></span>
-                  Сменный график
+                  Сменная
                 </label>
               </div>
             </div>
@@ -180,48 +264,12 @@
                 </label>
               </div>
             </div>
-
-            <!-- Сфера деятельности -->
-            <div class="filter-group">
-              <div class="filter-label">
-                <div class="filter-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span>Сфера деятельности</span>
-              </div>
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="production">
-                  <span class="checkmark"></span>
-                  Производство
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="construction">
-                  <span class="checkmark"></span>
-                  Строительство
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="logistics">
-                  <span class="checkmark"></span>
-                  Логистика
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.industry" value="services">
-                  <span class="checkmark"></span>
-                  Услуги
-                </label>
-              </div>
-            </div>
           </div>
         </div>
 
         <!-- Основная область контента -->
         <div class="content-area">
-          <!-- Active Work Warning -->
+          <!-- Баннер активной работы -->
           <div v-if="hasActiveSpecialty" class="warning-banner">
             <div class="banner-glow"></div>
             <div class="warning-content">
@@ -235,12 +283,12 @@
               </div>
               <div class="warning-text">
                 <strong>У вас уже есть активная работа</strong>
-                <p>Вы не можете записаться на новую специальность, пока не завершите текущую</p>
+                <p>Вы не можете записаться на новую специальность, пока не отмените текущую</p>
               </div>
             </div>
             <nuxt-link to="/borov" class="btn btn-outline btn-sm">
               <span class="button-content">
-                <span class="button-text">Перейти к текущей работе</span>
+                <span class="button-text">Перейти к работе</span>
                 <span class="button-icon">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -250,7 +298,7 @@
             </nuxt-link>
           </div>
 
-          <!-- Loading State -->
+          <!-- Состояние загрузки -->
           <div v-if="loading" class="loading-state">
             <div class="loading-orbital">
               <div class="orbit orbit-1">
@@ -263,10 +311,10 @@
                 <div class="core-inner"></div>
               </div>
             </div>
-            <p>Загрузка доступных специальностей...</p>
+            <p>Загрузка специальностей...</p>
           </div>
 
-          <!-- Empty State -->
+          <!-- Пустое состояние -->
           <div v-else-if="filteredSpecialties.length === 0" class="empty-state">
             <div class="empty-orbital">
               <div class="orbit"></div>
@@ -279,7 +327,7 @@
               </div>
             </div>
             <h3>Специальности не найдены</h3>
-            <p>Попробуйте изменить параметры поиска или зайдите позже</p>
+            <p>Попробуйте изменить параметры поиска</p>
             <button @click="clearFilters" class="btn btn-primary">
               <span class="button-content">
                 <span class="button-text">Сбросить фильтры</span>
@@ -287,7 +335,7 @@
             </button>
           </div>
 
-          <!-- Specialties Grid -->
+          <!-- Сетка специальностей -->
           <div v-else class="specialties-grid">
             <div
               v-for="specialty in filteredSpecialties"
@@ -297,7 +345,15 @@
             >
               <div class="card-glow"></div>
 
-
+              <!-- Бейдж для избранных -->
+              <div v-if="isFeatured(specialty)" class="featured-badge">
+                <div class="badge-icon">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
+                  </svg>
+                </div>
+                Рекомендуем
+              </div>
 
               <div class="specialty-header">
                 <div class="specialty-main">
@@ -437,7 +493,7 @@
       </div>
     </div>
 
-    <!-- Success Notification -->
+    <!-- Уведомление об успехе -->
     <div v-if="showSuccess" class="notification-message success show">
       <div class="notification-icon">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -462,16 +518,77 @@ const showSuccess = ref(false)
 const joinedSpecialtyTitle = ref('')
 const hasActiveSpecialty = ref(false)
 const searchFocused = ref(false)
+const showMobileFilters = ref(false)
+const activeSlider = ref<string | null>(null)
 
+// Диапазоны для ползунков
+const salaryRange = {
+  min: 1000,
+  max: 20000
+}
+
+const durationRange = {
+  min: 1,
+  max: 30
+}
+
+// Фильтры
 const filters = reactive({
   search: '',
   location: '',
-  minSalary: '',
-  startDate: '',
+  salary: [salaryRange.min, salaryRange.max],
+  duration: [durationRange.min, durationRange.max],
   employmentType: [],
-  experience: [],
-  industry: []
+  experience: []
 })
+
+// Вычисляемые свойства для стилей прогресса
+const salaryProgressStyle = computed(() => {
+  const min = filters.salary[0]
+  const max = filters.salary[1]
+  const minPercent = ((min - salaryRange.min) / (salaryRange.max - salaryRange.min)) * 100
+  const maxPercent = ((max - salaryRange.min) / (salaryRange.max - salaryRange.min)) * 100
+  return {
+    left: `${minPercent}%`,
+    width: `${maxPercent - minPercent}%`
+  }
+})
+
+const durationProgressStyle = computed(() => {
+  const min = filters.duration[0]
+  const max = filters.duration[1]
+  const minPercent = ((min - durationRange.min) / (durationRange.max - durationRange.min)) * 100
+  const maxPercent = ((max - durationRange.min) / (durationRange.max - durationRange.min)) * 100
+  return {
+    left: `${minPercent}%`,
+    width: `${maxPercent - minPercent}%`
+  }
+})
+
+// Функции для обновления диапазонов
+const updateSalaryRange = () => {
+  if (filters.salary[0] > filters.salary[1]) {
+    if (activeSlider.value === 'salary') {
+      filters.salary[0] = filters.salary[1]
+    } else {
+      filters.salary[1] = filters.salary[0]
+    }
+  }
+}
+
+const updateDurationRange = () => {
+  if (filters.duration[0] > filters.duration[1]) {
+    if (activeSlider.value === 'duration') {
+      filters.duration[0] = filters.duration[1]
+    } else {
+      filters.duration[1] = filters.duration[0]
+    }
+  }
+}
+
+const setActiveSlider = (type: string) => {
+  activeSlider.value = type
+}
 
 // Загрузка специальностей
 const loadSpecialties = async () => {
@@ -534,42 +651,49 @@ const filteredSpecialties = computed(() => {
     filtered = filtered.filter(s => s.location === filters.location)
   }
 
-  if (filters.minSalary) {
-    filtered = filtered.filter(s => s.salary >= parseInt(filters.minSalary))
+  // Фильтрация по зарплате
+  if (filters.salary[0] > salaryRange.min || filters.salary[1] < salaryRange.max) {
+    filtered = filtered.filter(s =>
+      s.salary >= filters.salary[0] && s.salary <= filters.salary[1]
+    )
   }
 
-  if (filters.startDate) {
-    const now = new Date()
-    const futureDate = new Date()
-
-    if (filters.startDate === 'week') {
-      futureDate.setDate(now.getDate() + 7)
-    } else if (filters.startDate === 'month') {
-      futureDate.setDate(now.getDate() + 30)
-    }
-
+  // Фильтрация по длительности
+  if (filters.duration[0] > durationRange.min || filters.duration[1] < durationRange.max) {
     filtered = filtered.filter(s => {
-      const startDate = new Date(s.start_date)
-      return startDate <= futureDate
+      const duration = calculateDuration(s.start_date, s.end_date)
+      return duration >= filters.duration[0] && duration <= filters.duration[1]
     })
   }
 
   // Фильтрация по типу занятости
   if (filters.employmentType.length > 0) {
-    // Реализация зависит от структуры данных
+    // Здесь можно добавить логику фильтрации по типу занятости
+    // если в данных появится соответствующее поле
   }
 
   // Фильтрация по опыту работы
   if (filters.experience.length > 0) {
-    // Реализация зависит от структуры данных
-  }
-
-  // Фильтрация по сфере деятельности
-  if (filters.industry.length > 0) {
-    // Реализация зависит от структуры данных
+    // Здесь можно добавить логику фильтрации по опыту
+    // если в данных появится соответствующее поле
   }
 
   return filtered
+})
+
+// Статистика
+const totalSpecialties = computed(() => {
+  return specialties.value.length
+})
+
+const uniqueLocations = computed(() => {
+  return new Set(specialties.value.map(s => s.location)).size
+})
+
+const averageSalary = computed(() => {
+  if (specialties.value.length === 0) return 0
+  const total = specialties.value.reduce((sum, s) => sum + s.salary, 0)
+  return Math.round(total / specialties.value.length)
 })
 
 // Уникальные локации для фильтра
@@ -577,21 +701,30 @@ const locations = computed(() => {
   return [...new Set(specialties.value.map(s => s.location))].sort()
 })
 
-// Статистика
-const uniqueEnterprises = computed(() => {
-  return new Set(specialties.value.map(s => s.vakhta_title)).size
-})
+// Функции для мобильных фильтров
+const toggleMobileFilters = () => {
+  showMobileFilters.value = !showMobileFilters.value
+}
 
-const nearestStartDate = computed(() => {
-  if (specialties.value.length === 0) return '-'
+const closeMobileFilters = () => {
+  showMobileFilters.value = false
+}
 
-  const nearest = specialties.value.reduce((nearest, specialty) => {
-    const specialtyDate = new Date(specialty.start_date)
-    return (!nearest || specialtyDate < new Date(nearest.start_date)) ? specialty : nearest
-  }, null)
+const handleResize = () => {
+  if (window.innerWidth > 1024) {
+    showMobileFilters.value = false
+  }
+}
 
-  return nearest ? formatDate(nearest.start_date) : '-'
-})
+// Закрытие фильтров по клику вне области
+const filtersSidebar = ref(null)
+
+const handleClickOutside = (event: Event) => {
+  if (filtersSidebar.value && !filtersSidebar.value.contains(event.target) &&
+      !event.target.closest('.mobile-filters-toggle')) {
+    closeMobileFilters()
+  }
+}
 
 // Действия
 const joinSpecialty = async (specialtyId: number) => {
@@ -608,10 +741,8 @@ const joinSpecialty = async (specialtyId: number) => {
     joinedSpecialtyTitle.value = joinedSpecialty?.title || ''
     showSuccess.value = true
 
-    // Обновляем данные
     await Promise.all([loadSpecialties(), checkActiveSpecialty()])
 
-    // Автоматически скрываем уведомление через 5 секунд
     setTimeout(() => {
       showSuccess.value = false
     }, 5000)
@@ -628,11 +759,10 @@ const clearFilters = () => {
   Object.assign(filters, {
     search: '',
     location: '',
-    minSalary: '',
-    startDate: '',
+    salary: [salaryRange.min, salaryRange.max],
+    duration: [durationRange.min, durationRange.max],
     employmentType: [],
-    experience: [],
-    industry: []
+    experience: []
   })
 }
 
@@ -669,6 +799,13 @@ const isFeatured = (specialty: any) => {
 // Инициализация
 onMounted(async () => {
   await Promise.all([loadSpecialties(), checkActiveSpecialty()])
+  window.addEventListener('resize', handleResize)
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -719,15 +856,6 @@ onMounted(async () => {
   transform: translateZ(0);
   opacity: 0.3;
   animation: parallax-3 10s infinite linear;
-}
-
-.particles-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
 }
 
 .gradient-overlay {
@@ -798,22 +926,6 @@ onMounted(async () => {
   top: 20%;
   right: 10%;
   animation-delay: -4s;
-}
-
-.element-4 {
-  width: 120px;
-  height: 120px;
-  top: 60%;
-  right: 5%;
-  animation-delay: -1s;
-}
-
-.element-5 {
-  width: 70px;
-  height: 70px;
-  top: 80%;
-  right: 20%;
-  animation-delay: -3s;
 }
 
 @keyframes float-element {
@@ -1241,6 +1353,171 @@ onMounted(async () => {
   top: 1px;
 }
 
+/* Улучшенные стили для ползунков */
+.range-slider-group {
+  margin-top: 10px;
+}
+
+.range-values {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.range-value-min,
+.range-value-max {
+  background: rgba(212, 175, 55, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  font-weight: 500;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.custom-range-slider {
+  position: relative;
+  height: 24px;
+  margin: 15px 0;
+  touch-action: none;
+}
+
+.range-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transform: translateY(-50%);
+  overflow: hidden;
+}
+
+.range-progress {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.range-input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  outline: none;
+}
+
+.range-input::-webkit-slider-thumb {
+  pointer-events: all;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d4af37;
+  border: 2px solid #0a0a0a;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow:
+    0 2px 8px rgba(212, 175, 55, 0.4),
+    0 0 0 0px rgba(212, 175, 55, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow:
+    0 4px 12px rgba(212, 175, 55, 0.6),
+    0 0 0 4px rgba(212, 175, 55, 0.2);
+}
+
+.range-input::-webkit-slider-thumb:active {
+  transform: scale(1.1);
+  box-shadow:
+    0 3px 10px rgba(212, 175, 55, 0.5),
+    0 0 0 6px rgba(212, 175, 55, 0.15);
+}
+
+.range-input::-moz-range-thumb {
+  pointer-events: all;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d4af37;
+  border: 2px solid #0a0a0a;
+  cursor: pointer;
+  box-shadow:
+    0 2px 8px rgba(212, 175, 55, 0.4),
+    0 0 0 0px rgba(212, 175, 55, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.range-input::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow:
+    0 4px 12px rgba(212, 175, 55, 0.6),
+    0 0 0 4px rgba(212, 175, 55, 0.2);
+}
+
+.range-input::-moz-range-thumb:active {
+  transform: scale(1.1);
+  box-shadow:
+    0 3px 10px rgba(212, 175, 55, 0.5),
+    0 0 0 6px rgba(212, 175, 55, 0.15);
+}
+
+.range-input::-webkit-slider-track {
+  background: transparent;
+  border: none;
+  height: 6px;
+  -webkit-appearance: none;
+}
+
+.range-input::-moz-range-track {
+  background: transparent;
+  border: none;
+  height: 6px;
+}
+
+.range-input:active::-webkit-slider-thumb {
+  animation: thumb-pulse 1.5s infinite;
+}
+
+.range-input:active::-moz-range-thumb {
+  animation: thumb-pulse 1.5s infinite;
+}
+
+@keyframes thumb-pulse {
+  0%, 100% {
+    box-shadow:
+      0 2px 8px rgba(212, 175, 55, 0.4),
+      0 0 0 0px rgba(212, 175, 55, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 2px 8px rgba(212, 175, 55, 0.4),
+      0 0 0 4px rgba(212, 175, 55, 0.2);
+  }
+}
+
 /* Основная область контента */
 .content-area {
   min-height: 500px;
@@ -1256,6 +1533,10 @@ onMounted(async () => {
   margin-bottom: 25px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .banner-glow {
@@ -1279,6 +1560,7 @@ onMounted(async () => {
   gap: 15px;
   position: relative;
   z-index: 2;
+  flex: 1;
 }
 
 .warning-icon {
@@ -1725,6 +2007,54 @@ onMounted(async () => {
   font-size: 0.9rem;
 }
 
+/* Мобильные фильтры */
+.mobile-filters-toggle {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+  display: none;
+}
+
+.mobile-filters-toggle .btn {
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+  border-radius: 50px;
+  padding: 16px 24px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.6);
+  }
+  100% {
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+  }
+}
+
+/* Заголовок фильтров для мобильной версии */
+.mobile-filters-header {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.mobile-filters-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.4rem;
+}
+
+.close-filters-btn {
+  display: none;
+}
+
 /* Адаптивность */
 @media (max-width: 1200px) {
   .main-content {
@@ -1743,8 +2073,39 @@ onMounted(async () => {
   }
 
   .filters-sidebar {
-    position: static;
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 85%;
+    max-width: 400px;
+    height: 100vh;
     max-height: none;
+    border-radius: 0;
+    border-right: 1px solid rgba(212, 175, 55, 0.2);
+    z-index: 1001;
+    transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow-y: auto;
+    padding: 25px;
+  }
+
+  .filters-sidebar.mobile-open {
+    left: 0;
+  }
+
+  .mobile-filters-header {
+    display: flex;
+  }
+
+  .close-filters-btn {
+    display: inline-flex;
+  }
+
+  .filters-header {
+    display: none;
+  }
+
+  .mobile-filters-toggle {
+    display: block;
   }
 
   .specialties-grid {
@@ -1837,6 +2198,18 @@ onMounted(async () => {
     left: 15px;
     max-width: none;
   }
+
+  .range-values {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .range-value-min,
+  .range-value-max {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1849,11 +2222,68 @@ onMounted(async () => {
   }
 
   .filters-sidebar {
+    width: 90%;
     padding: 15px;
   }
 
   .specialty-card {
     padding: 20px;
   }
+
+  .mobile-filters-toggle {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .mobile-filters-toggle .btn {
+    padding: 14px 20px;
+    font-size: 0.9rem;
+  }
+
+  .custom-range-slider {
+    height: 32px;
+  }
+
+  .range-input::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .range-input::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .range-track {
+    height: 8px;
+  }
+}
+
+/* Улучшения для touch-устройств */
+@media (hover: none) and (pointer: coarse) {
+  .range-input::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .range-input::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .custom-range-slider {
+    height: 32px;
+  }
+}
+
+/* Подсветка при фокусе для доступности */
+.range-input:focus::-webkit-slider-thumb {
+  outline: 2px solid rgba(212, 175, 55, 0.5);
+  outline-offset: 2px;
+}
+
+.range-input:focus::-moz-range-thumb {
+  outline: 2px solid rgba(212, 175, 55, 0.5);
+  outline-offset: 2px;
 }
 </style>

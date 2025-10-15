@@ -18,6 +18,7 @@
   "author": "Borovy Team",
   "license": "MIT",
   "dependencies": {
+    "multer": "^2.0.2",
     "v-mask": "^2.3.0"
   }
 }

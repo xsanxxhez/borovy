@@ -1,7 +1,11 @@
 <template>
   <div class="slon-dashboard">
+ <div class="background-image" :style="{ backgroundImage: `url(${backgroundImage})` }"></div>
+
+   <div class="background-overlay"></div>
     <!-- Welcome Header -->
     <div class="welcome-header">
+
       <div class="welcome-content">
         <h1>🐘 Добро пожаловать, {{ authStore.user?.display_name }}!</h1>
         <p>Ваш центр управления промокодами и боровыми</p>
@@ -572,6 +576,10 @@
 </template>
 
 <script setup lang="ts">
+
+const backgroundImage = '/business.jpeg'
+
+
 definePageMeta({
   middleware: 'auth'
 })
@@ -745,6 +753,7 @@ const createPromoCode = async () => {
   }
 }
 
+
 const generateCode = () => {
   const prefix = authStore.user?.username?.toUpperCase() || 'SLON'
   const random = Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -869,19 +878,6 @@ onMounted(async () => {
 
 <style scoped>
 /* Стили для кабинета слона (аналогично админке, но с акцентом на промокоды) */
-.slon-dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.welcome-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 40px;
-  border-radius: 20px;
-  margin-bottom: 30px;
-}
 
 .welcome-content h1 {
   margin: 0 0 10px 0;
@@ -1919,4 +1915,71 @@ onMounted(async () => {
   outline: none;
   border-color: #007bff;
 }
+
+.slon-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Фоновое изображение - правильный путь */
+
+/* Оверлей для читаемости */
+.background-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 10, 10, 0.7);
+  z-index: -1;
+}
+
+/* Обновите стили контента для прозрачности */
+.welcome-header {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+  color: white;
+  padding: 40px;
+  border-radius: 20px;
+  margin-bottom: 30px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 0;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.promo-card, .stat-card, .action-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Убедитесь, что контент поверх фона */
+.welcome-header,
+.tab-content,
+.modal-content {
+  position: relative;
+  z-index: 1;
+}
+
 </style scoped>

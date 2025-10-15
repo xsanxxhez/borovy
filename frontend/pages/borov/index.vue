@@ -124,7 +124,7 @@
             </button>
             <nuxt-link
               v-else
-              to="/borov/enterprises"
+              to="/borov/specialties"
               class="btn btn-primary btn-glow"
             >
               <span class="button-content">
@@ -136,44 +136,14 @@
         </div>
       </div>
 
-      <!-- Основные метрики с анимациями -->
-      <div class="metrics-section">
-        <div class="metrics-grid">
-          <div
-            v-for="metric in metrics"
-            :key="metric.id"
-            class="metric-card"
-            :class="metric.status"
-          >
-            <div class="metric-glow"></div>
-            <div class="metric-icon">
-              <div class="icon-background"></div>
-              <div class="icon-foreground">
-                {{ metric.icon }}
-              </div>
-            </div>
-            <div class="metric-content">
-              <div class="metric-value">{{ metric.value }}</div>
-              <div class="metric-label">{{ metric.label }}</div>
-            </div>
-            <div v-if="metric.trend" class="metric-trend" :class="metric.trend.type">
-              {{ metric.trend.value }}
-            </div>
-            <div class="metric-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: metric.progress + '%' }"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       <!-- Быстрые действия с hover-эффектами -->
       <div class="quick-actions-section">
         <div class="section-header">
           <h2 class="section-title">
-            <span class="title-word">Быстрые</span>
-            <span class="title-word">действия</span>
+            <span class="title-word">Быстрые действия</span>
+
           </h2>
           <div class="section-decoration">
             <div class="decoration-line"></div>
@@ -209,9 +179,9 @@
         <div class="column activity-column">
           <div class="section-header">
             <h2 class="section-title">
-              <span class="title-word">Недавняя </span>
+              <span class="title-word">Недавняя активность</span>
 
-              <span class="title-word">активность</span>
+
             </h2>
             <nuxt-link to="/borov/history" class="view-all-link">
               <span>Вся история</span>
@@ -321,7 +291,7 @@
             </div>
           </div>
           <div class="motivation-action">
-            <nuxt-link to="/borov/enterprises" class="btn btn-primary btn-large btn-glow">
+            <nuxt-link to="/borov/specialties" class="btn btn-primary btn-large btn-glow">
               <span class="button-content">
                 <span class="button-text">Начать поиск работы</span>
               </span>
@@ -467,17 +437,10 @@ const metrics = computed(() => [
 
 const quickActions = computed(() => [
   {
-    id: 'enterprises',
-    icon: '🏗️',
-    title: 'Предприятия',
-    description: 'Найди работу',
-    path: '/borov/enterprises'
-  },
-  {
     id: 'specialties',
     icon: '💼',
-    title: 'Специальности',
-    description: 'Мои профессии',
+    title: 'Вакансии',
+    description: 'Предложения по работе',
     path: '/borov/specialties'
   },
   {

@@ -109,6 +109,8 @@ const createTables = async () => {
     `);
     console.log('✅ borov_vakhta_history table created');
 
+    ALTER TABLE borovs ADD COLUMN avatar_url VARCHAR(500);
+
     // Create borov_specialty_history table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS borov_specialty_history (

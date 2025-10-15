@@ -1,4 +1,5 @@
-
+const path = require('path'); // Добавьте эту строку
+const fs = require('fs'); // Добавьте эту строку
 const { pool } = require('../config/database');
 const { hashPassword, comparePassword } = require('../utils/passwordHash');
 
@@ -54,6 +55,149 @@ const register = async (req, res) => {
 // НОВЫЕ МЕТОДЫ ДЛЯ АНКЕТЫ БОРОВА
 
 // Получение анкеты борова
+const uploadAvatar = async (req, res) => {
+  try {
+    const borov_id = req.user.id;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Создаем относительный URL для аватарки (без host)
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+    // Обновляем аватарку в базе данных
+    await pool.query(
+      'UPDATE borovs SET avatar_url = $1 WHERE id = $2',
+      [avatarUrl, borov_id]
+    );
+
+    // Если был старый файл, удаляем его
+    const oldAvatarResult = await pool.query(
+      'SELECT avatar_url FROM borovs WHERE id = $1',
+      [borov_id]
+    );
+
+    if (oldAvatarResult.rows[0]?.avatar_url) {
+      const oldFilename = oldAvatarResult.rows[0].avatar_url.split('/').pop();
+      const oldPath = path.join(__dirname, '../uploads/avatars', oldFilename);
+
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    res.json({
+      message: 'Avatar uploaded successfully',
+      avatar_url: avatarUrl
+    });
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+
+    // Если произошла ошибка, удаляем загруженный файл
+    if (req.file) {
+      const filePath = path.join(__dirname, '../uploads/avatars', req.file.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+// МЕТОД ДЛЯ УДАЛЕНИЯ АВАТАРКИ
+const deleteAvatar = async (req, res) => {
+  try {
+    const borov_id = req.user.id;
+
+    // Получаем текущую аватарку
+    const result = await pool.query(
+      'SELECT avatar_url FROM borovs WHERE id = $1',
+      [borov_id]
+    );
+
+    if (result.rows[0]?.avatar_url) {
+      const filename = result.rows[0].avatar_url.split('/').pop();
+      const filePath = path.join(__dirname, '../uploads/avatars', filename);
+
+      // Удаляем файл с диска
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Обновляем базу данных
+    await pool.query(
+      'UPDATE borovs SET avatar_url = NULL WHERE id = $1',
+      [borov_id]
+    );
+
+    res.json({ message: 'Avatar deleted successfully' });
+  } catch (error) {
+    console.error('Delete avatar error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// МЕТОД ДЛЯ ПОЛУЧЕНИЯ АВАТАРКИ
+const getAvatar = async (req, res) => {
+  try {
+    const { borov_id } = req.params;
+
+    const result = await pool.query(
+      'SELECT avatar_url FROM borovs WHERE id = $1',
+      [borov_id]
+    );
+
+    if (result.rows.length === 0 || !result.rows[0].avatar_url) {
+      return res.status(404).json({ error: 'Avatar not found' });
+    }
+
+    const avatarUrl = result.rows[0].avatar_url;
+    const filename = avatarUrl.split('/').pop();
+    const filePath = path.join(__dirname, '../uploads/avatars', filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Avatar file not found' });
+    }
+
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Get avatar error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// МЕТОД ДЛЯ ПОЛУЧЕНИЯ СВОЕЙ АВАТАРКИ
+const getMyAvatar = async (req, res) => {
+  try {
+    const borov_id = req.user.id;
+
+    const result = await pool.query(
+      'SELECT avatar_url FROM borovs WHERE id = $1',
+      [borov_id]
+    );
+
+    if (result.rows.length === 0 || !result.rows[0].avatar_url) {
+      return res.status(404).json({ error: 'Avatar not found' });
+    }
+
+    const avatarUrl = result.rows[0].avatar_url;
+    const filename = avatarUrl.split('/').pop();
+    const filePath = path.join(__dirname, '../uploads/avatars', filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Avatar file not found' });
+    }
+
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Get my avatar error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// ОБНОВЛЕННЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ ПРОФИЛЯ (теперь включает аватарку)
 const getBorovProfile = async (req, res) => {
   try {
     const borov_id = req.user.id;
@@ -92,6 +236,51 @@ const getBorovProfile = async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Get borov profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// ОБНОВЛЕННЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ ПУБЛИЧНОГО ПРОФИЛЯ
+const getPublicProfile = async (req, res) => {
+  try {
+    const { borov_id } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        b.full_name,
+        b.email,
+        b.phone,
+        b.avatar_url,
+        bp.about_me,
+        bp.specialization,
+        bp.experience_years,
+        bp.experience_description,
+        bp.driver_license_category,
+        bp.languages,
+        bp.skills,
+        bp.education,
+        bp.certifications,
+        bp.preferred_work_types,
+        bp.work_radius,
+        bp.has_car,
+        bp.has_tools,
+        bp.salary_expectations,
+        bp.updated_at,
+        bs.total_vakhtas_completed,
+        bs.total_work_days
+      FROM borovs b
+      LEFT JOIN borov_profiles bp ON b.id = bp.borov_id
+      LEFT JOIN borov_stats bs ON b.id = bs.borov_id
+      WHERE b.id = $1 AND b.is_active = true
+    `, [borov_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Get public profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -179,48 +368,7 @@ const updateBorovProfile = async (req, res) => {
 };
 
 // Получение публичной анкеты
-const getPublicProfile = async (req, res) => {
-  try {
-    const { borov_id } = req.params;
 
-    const result = await pool.query(`
-      SELECT
-        b.full_name,
-        b.email,
-        b.phone,
-        bp.about_me,
-        bp.specialization,
-        bp.experience_years,
-        bp.experience_description,
-        bp.driver_license_category,
-        bp.languages,
-        bp.skills,
-        bp.education,
-        bp.certifications,
-        bp.preferred_work_types,
-        bp.work_radius,
-        bp.has_car,
-        bp.has_tools,
-        bp.salary_expectations,
-        bp.updated_at,
-        bs.total_vakhtas_completed,
-        bs.total_work_days
-      FROM borovs b
-      LEFT JOIN borov_profiles bp ON b.id = bp.borov_id
-      LEFT JOIN borov_stats bs ON b.id = bs.borov_id
-      WHERE b.id = $1 AND b.is_active = true
-    `, [borov_id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Profile not found' });
-    }
-
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Get public profile error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
 // УЛУЧШЕННЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ ДОСТУПНЫХ ВАХТ
 const getAvailableVakhtas = async (req, res) => {
   try {
@@ -713,18 +861,22 @@ const getCurrentWork = async (req, res) => {
 
 module.exports = {
   register,
-  getAvailableVakhtas,
-  joinVakhta,
-  leaveVakhta,
-  getMyVakhtas,
-  getBorovStats,
-  changePassword,
-  getAvailableSpecialties,
-  joinSpecialty,
-  leaveSpecialty,
-  getMySpecialties,
-  getCurrentWork,
-  getPublicProfile,
-  updateBorovProfile,
-  getBorovProfile
+    getAvailableVakhtas,
+    joinVakhta,
+    leaveVakhta,
+    getMyVakhtas,
+    getBorovStats,
+    changePassword,
+    getAvailableSpecialties,
+    joinSpecialty,
+    leaveSpecialty,
+    getMySpecialties,
+    getCurrentWork,
+    getPublicProfile,
+    updateBorovProfile,
+    getBorovProfile,
+    uploadAvatar,
+    deleteAvatar,
+    getAvatar,
+    getMyAvatar
 };
