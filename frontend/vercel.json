@@ -5,5 +5,11 @@
       "src": "package.json",
       "use": "@nuxt/vercel-builder"
     }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
   ]
 }
