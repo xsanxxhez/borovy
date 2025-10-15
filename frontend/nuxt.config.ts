@@ -1,8 +1,20 @@
 export default defineNuxtConfig({
   ssr: false,
+  devtools: { enabled: true },
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_URL || 'https://borovy-backend3.vercel.app/api'
+      apiBase: process.env.API_URL || 'https://borovy-backend4.vercel.app/api'
+    }
+  },
+  modules: [],
+  css: ['~/assets/css/main.css'],
+  app: {
+    head: {
+      title: 'Borovy App',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+      ]
     }
   }
 })
