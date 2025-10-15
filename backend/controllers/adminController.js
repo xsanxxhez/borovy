@@ -23,14 +23,14 @@ const getAllSlons = async (req, res) => {
 };
 // Добавь эту функцию в adminController.js
 
-// Получение вахт со специальностями
 const getVakhtasWithSpecialties = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
         v.*,
-        (SELECT COUNT(*) FROM borov_vakhta_history
-         WHERE vakhta_id = v.id AND status = 'active') as current_workers,
+        -- Используем current_workers из таблицы vakhtas вместо подсчета
+        COALESCE(v.current_workers, 0) as current_workers,
+        v.total_places - COALESCE(v.current_workers, 0) as free_places,
         COALESCE(json_agg(
           json_build_object(
             'id', s.id,
@@ -58,7 +58,6 @@ const getVakhtasWithSpecialties = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 const createSlon = async (req, res) => {
   try {
     console.log('Create slon request:', req.body);
@@ -433,6 +432,104 @@ const createSpecialty = async (req, res) => {
   }
 };
 
+// В adminController.js добавить методы для управления боровыми
+
+// Снять борова со всех активных работ
+const removeBorovFromAllWork = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const { borov_id } = req.params;
+
+    console.log('🔄 Removing borov from all work:', borov_id);
+
+    // 1. Проверяем существование борова
+    const borovCheck = await client.query(
+      'SELECT id, full_name FROM borovs WHERE id = $1',
+      [borov_id]
+    );
+
+    if (borovCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Borov not found' });
+    }
+
+    const borov = borovCheck.rows[0];
+
+    // 2. Снимаем с активных вахт
+    const activeVakhtas = await client.query(
+      'SELECT vakhta_id FROM borov_vakhta_history WHERE borov_id = $1 AND status = $2',
+      [borov_id, 'active']
+    );
+
+    for (const vakhta of activeVakhtas.rows) {
+      await client.query(
+        `UPDATE borov_vakhta_history
+         SET status = 'completed', end_date = NOW()
+         WHERE borov_id = $1 AND vakhta_id = $2 AND status = 'active'`,
+        [borov_id, vakhta.vakhta_id]
+      );
+
+      // Обновляем счетчик на вахте
+      await client.query(
+        `UPDATE vakhtas
+         SET current_workers = GREATEST(COALESCE(current_workers, 0) - 1, 0)
+         WHERE id = $1`,
+        [vakhta.vakhta_id]
+      );
+    }
+
+    // 3. Снимаем с активных специальностей
+    const activeSpecialties = await client.query(
+      `SELECT s.vakhta_id FROM borov_specialty_history bsh
+       JOIN specialties s ON bsh.specialty_id = s.id
+       WHERE bsh.borov_id = $1 AND bsh.status = $2`,
+      [borov_id, 'active']
+    );
+
+    for (const specialty of activeSpecialties.rows) {
+      await client.query(
+        `UPDATE borov_specialty_history
+         SET status = 'completed', end_date = NOW()
+         WHERE borov_id = $1 AND status = 'active'`,
+        [borov_id]
+      );
+
+      // Обновляем счетчик на вахте
+      await client.query(
+        `UPDATE vakhtas
+         SET current_workers = GREATEST(COALESCE(current_workers, 0) - 1, 0)
+         WHERE id = $1`,
+        [specialty.vakhta_id]
+      );
+    }
+
+    // 4. Обновляем статистику
+    await client.query(
+      'UPDATE borov_stats SET current_vakhta_id = NULL WHERE borov_id = $1',
+      [borov_id]
+    );
+
+    await client.query('COMMIT');
+
+    const totalRemoved = activeVakhtas.rows.length + activeSpecialties.rows.length;
+    console.log('✅ Removed borov from', totalRemoved, 'work assignments');
+
+    res.json({
+      message: `Borov "${borov.full_name}" removed from ${totalRemoved} work assignments`,
+      removed_count: totalRemoved
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Remove borov from work error:', error);
+    res.status(500).json({ error: 'Internal server error: ' + error.message });
+  } finally {
+    client.release();
+  }
+};
+
 // Create promo code
 const createPromoCode = async (req, res) => {
   try {
@@ -520,39 +617,7 @@ const getAdminStats = async (req, res) => {
   }
 };
 
-// В adminController.js нет методов deleteSpecialty
-// Нужно добавить:
-const deleteSpecialty = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    // Проверяем активных работников
-    const activeWorkers = await pool.query(
-      'SELECT COUNT(*) FROM borov_specialty_history WHERE specialty_id = $1 AND status = $2',
-      [id, 'active']
-    );
-
-    if (parseInt(activeWorkers.rows[0].count) > 0) {
-      return res.status(400).json({
-        error: 'Cannot delete specialty with active workers'
-      });
-    }
-
-    const result = await pool.query(
-      'DELETE FROM specialties WHERE id = $1 RETURNING *',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Specialty not found' });
-    }
-
-    res.json({ message: 'Specialty deleted successfully' });
-  } catch (error) {
-    console.error('Delete specialty error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
 
 // В adminController.js и slonController.js нет deletePromoCode
 // Нужно добавить:
@@ -620,38 +685,583 @@ const deleteSlon = async (req, res) => {
   }
 };
 
+// В adminController.js заменим существующие методы:
+
 const deleteVakhta = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const { id } = req.params;
+
+    console.log('🔄 Starting delete vakhta process for ID:', id);
+
+    // 1. Проверяем активных работников на самой вахте (используем current_workers из таблицы)
+    const vakhtaInfo = await client.query(
+      'SELECT current_workers, title FROM vakhtas WHERE id = $1',
+      [id]
+    );
+
+    if (vakhtaInfo.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Vakhta not found' });
+    }
+
+    const currentWorkers = vakhtaInfo.rows[0].current_workers || 0;
+
+    if (currentWorkers > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: `Cannot delete vakhta with ${currentWorkers} active workers. Please remove workers first.`
+      });
+    }
+
+    // 2. Проверяем активных работников на специальностях этой вахты
+    const activeSpecialtyWorkers = await client.query(
+      `SELECT COUNT(*) FROM borov_specialty_history bsh
+       JOIN specialties s ON bsh.specialty_id = s.id
+       WHERE s.vakhta_id = $1 AND bsh.status = 'active'`,
+      [id]
+    );
+
+    if (parseInt(activeSpecialtyWorkers.rows[0].count) > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'Cannot delete vakhta with active workers on its specialties'
+      });
+    }
+
+    console.log('✅ No active workers found, proceeding with deletion...');
+
+    // 3. Удаляем историю специальностей
+    await client.query(
+      `DELETE FROM borov_specialty_history
+       WHERE specialty_id IN (SELECT id FROM specialties WHERE vakhta_id = $1)`,
+      [id]
+    );
+
+    // 4. Удаляем специальности
+    await client.query(
+      'DELETE FROM specialties WHERE vakhta_id = $1',
+      [id]
+    );
+
+    // 5. Удаляем историю вахт (на всякий случай, хотя current_workers уже 0)
+    await client.query(
+      'DELETE FROM borov_vakhta_history WHERE vakhta_id = $1',
+      [id]
+    );
+
+    // 6. Обновляем статистику боровов (на всякий случай)
+    await client.query(
+      'UPDATE borov_stats SET current_vakhta_id = NULL WHERE current_vakhta_id = $1',
+      [id]
+    );
+
+    // 7. Удаляем вахту
+    const result = await client.query(
+      'DELETE FROM vakhtas WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    await client.query('COMMIT');
+    console.log('✅ Vakhta deleted successfully:', id);
+    res.json({ message: 'Vakhta deleted successfully' });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Delete vakhta error:', error);
+
+    // Более информативное сообщение об ошибке
+    let errorMessage = 'Internal server error';
+    if (error.code === '23503') {
+      errorMessage = 'Cannot delete vakhta - there are still related records in the database';
+    }
+
+    res.status(500).json({ error: errorMessage + ': ' + error.message });
+  } finally {
+    client.release();
+  }
+};
+
+// В adminController.js добавить отладочный метод
+const debugVakhtaWorkers = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Проверяем активных работников
-    const activeWorkers = await pool.query(
-      'SELECT COUNT(*) FROM borov_vakhta_history WHERE vakhta_id = $1 AND status = $2',
+    console.log('🔍 Debug vakhta workers for ID:', id);
+
+    // 1. Информация о вахте
+    const vakhtaInfo = await pool.query(
+      'SELECT id, title, current_workers, total_places FROM vakhtas WHERE id = $1',
+      [id]
+    );
+
+    // 2. Работники на самой вахте
+    const vakhtaWorkers = await pool.query(
+      'SELECT COUNT(*) as count FROM borov_vakhta_history WHERE vakhta_id = $1 AND status = $2',
+      [id, 'active']
+    );
+
+    // 3. Работники на специальностях
+    const specialtyWorkers = await pool.query(
+      `SELECT COUNT(*) as count FROM borov_specialty_history bsh
+       JOIN specialties s ON bsh.specialty_id = s.id
+       WHERE s.vakhta_id = $1 AND bsh.status = $2`,
+      [id, 'active']
+    );
+
+    // 4. Специальности этой вахты
+    const specialties = await pool.query(
+      'SELECT id, title FROM specialties WHERE vakhta_id = $1',
+      [id]
+    );
+
+    const debugInfo = {
+      vakhta: vakhtaInfo.rows[0] || null,
+      vakhta_workers: parseInt(vakhtaWorkers.rows[0].count),
+      specialty_workers: parseInt(specialtyWorkers.rows[0].count),
+      specialties: specialties.rows,
+      total_workers: parseInt(vakhtaWorkers.rows[0].count) + parseInt(specialtyWorkers.rows[0].count)
+    };
+
+    console.log('🔍 Debug info:', debugInfo);
+    res.json(debugInfo);
+
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ error: 'Debug error: ' + error.message });
+  }
+};
+// Добавить в adminController.js
+
+// В adminController.js - проверьте этот метод
+const getVakhtaWorkers = async (req, res) => {
+  try {
+    const { vakhta_id } = req.params;
+
+    console.log('🔄 Getting workers for vakhta:', vakhta_id);
+
+    const result = await pool.query(`
+      SELECT
+        bvh.*,
+        b.full_name,
+        b.phone,
+        b.email,
+        b.id as borov_id,
+        v.title as vakhta_title
+      FROM borov_vakhta_history bvh
+      JOIN borovs b ON bvh.borov_id = b.id
+      JOIN vakhtas v ON bvh.vakhta_id = v.id
+      WHERE bvh.vakhta_id = $1 AND bvh.status = 'active'
+      ORDER BY bvh.created_at DESC
+    `, [vakhta_id]);
+
+    console.log('✅ Found workers:', result.rows.length);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('❌ Get vakhta workers error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+// В adminController.js обновим метод removeAllWorkersFromVakhta
+const removeAllWorkersFromVakhta = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const { vakhta_id } = req.params;
+
+    console.log('🔄 Removing all workers from vakhta:', vakhta_id);
+
+    // 1. Получаем информацию о работниках
+    const activeWorkers = await client.query(`
+      SELECT borov_id FROM borov_vakhta_history
+      WHERE vakhta_id = $1 AND status = 'active'
+    `, [vakhta_id]);
+
+    // 2. Получаем информацию о работниках на специальностях этой вахты
+    const activeSpecialtyWorkers = await client.query(`
+      SELECT borov_id FROM borov_specialty_history bsh
+      JOIN specialties s ON bsh.specialty_id = s.id
+      WHERE s.vakhta_id = $1 AND bsh.status = 'active'
+    `, [vakhta_id]);
+
+    const totalWorkers = activeWorkers.rows.length + activeSpecialtyWorkers.rows.length;
+
+    if (totalWorkers === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'No active workers found on this vakhta'
+      });
+    }
+
+    // 3. Обновляем статус работников на вахте
+    await client.query(`
+      UPDATE borov_vakhta_history
+      SET status = 'completed', end_date = NOW()
+      WHERE vakhta_id = $1 AND status = 'active'
+    `, [vakhta_id]);
+
+    // 4. Обновляем статус работников на специальностях
+    await client.query(`
+      UPDATE borov_specialty_history
+      SET status = 'completed', end_date = NOW()
+      WHERE specialty_id IN (SELECT id FROM specialties WHERE vakhta_id = $1)
+      AND status = 'active'
+    `, [vakhta_id]);
+
+    // 5. Обновляем статистику боровов
+    const allBorovIds = [
+      ...activeWorkers.rows.map(row => row.borov_id),
+      ...activeSpecialtyWorkers.rows.map(row => row.borov_id)
+    ];
+
+    for (const borovId of allBorovIds) {
+      await client.query(`
+        UPDATE borov_stats
+        SET current_vakhta_id = NULL
+        WHERE borov_id = $1 AND current_vakhta_id = $2
+      `, [borovId, vakhta_id]);
+    }
+
+    // 6. СБРАСЫВАЕМ СЧЕТЧИК РАБОТНИКОВ НА ВАХТЕ
+    await client.query(`
+      UPDATE vakhtas
+      SET current_workers = 0
+      WHERE id = $1
+    `, [vakhta_id]);
+
+    await client.query('COMMIT');
+
+    console.log('✅ Removed', totalWorkers, 'workers from vakhta:', vakhta_id);
+    res.json({
+      message: `Successfully removed ${totalWorkers} workers from vakhta`,
+      removed_count: totalWorkers
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Remove all workers from vakhta error:', error);
+    res.status(500).json({ error: 'Internal server error: ' + error.message });
+  } finally {
+    client.release();
+  }
+};
+
+// Снять конкретного работника с вахты
+const removeWorkerFromVakhta = async (req, res) => {
+  try {
+    const { vakhta_id, borov_id } = req.params;
+
+    console.log('🔄 Removing worker from vakhta:', { vakhta_id, borov_id });
+
+    // Проверяем существует ли такая запись
+    const workerRecord = await pool.query(`
+      SELECT * FROM borov_vakhta_history
+      WHERE vakhta_id = $1 AND borov_id = $2 AND status = 'active'
+    `, [vakhta_id, borov_id]);
+
+    if (workerRecord.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Worker not found or not active on this vakhta'
+      });
+    }
+
+    // Обновляем статус работника
+    await pool.query(`
+      UPDATE borov_vakhta_history
+      SET status = 'completed', end_date = NOW()
+      WHERE vakhta_id = $1 AND borov_id = $2 AND status = 'active'
+    `, [vakhta_id, borov_id]);
+
+    // Обновляем статистику борова
+    await pool.query(`
+      UPDATE borov_stats
+      SET current_vakhta_id = NULL
+      WHERE borov_id = $1 AND current_vakhta_id = $2
+    `, [borov_id, vakhta_id]);
+
+    console.log('✅ Removed worker from vakhta');
+    res.json({
+      message: 'Worker successfully removed from vakhta',
+      borov_name: workerRecord.rows[0].full_name
+    });
+
+  } catch (error) {
+    console.error('Remove worker from vakhta error:', error);
+    res.status(500).json({ error: 'Internal server error: ' + error.message });
+  }
+};
+
+const deleteSpecialty = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const { id } = req.params;
+
+    console.log('🔄 Starting delete specialty process for ID:', id);
+
+    // 1. Проверяем активных работников
+    const activeWorkers = await client.query(
+      'SELECT COUNT(*) FROM borov_specialty_history WHERE specialty_id = $1 AND status = $2',
       [id, 'active']
     );
 
     if (parseInt(activeWorkers.rows[0].count) > 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({
-        error: 'Cannot delete vakhta with active workers'
+        error: 'Cannot delete specialty with active workers'
       });
     }
 
-    const result = await pool.query(
+    // 2. Удаляем историю
+    await client.query(
+      'DELETE FROM borov_specialty_history WHERE specialty_id = $1',
+      [id]
+    );
+
+    // 3. Удаляем специальность
+    const result = await client.query(
+      'DELETE FROM specialties WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Specialty not found' });
+    }
+
+    await client.query('COMMIT');
+    console.log('✅ Specialty deleted successfully:', id);
+    res.json({ message: 'Specialty deleted successfully' });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Delete specialty error:', error);
+    res.status(500).json({ error: 'Internal server error: ' + error.message });
+  } finally {
+    client.release();
+  }
+};
+// Добавить в adminController.js
+
+// Добавить в adminController.js
+
+// Упрощенная версия для тестирования
+const getBorovProfileSimple = async (req, res) => {
+  try {
+    const { borov_id } = req.params;
+    console.log('🔄 ADMIN: Fetching borov profile for ID:', borov_id);
+    console.log('🔄 ADMIN: Request params:', req.params);
+    console.log('🔄 ADMIN: Request user:', req.user);
+
+    // Базовая информация о борове
+    const borovResult = await pool.query(`
+      SELECT
+        b.id, b.full_name, b.email, b.phone, b.birth_date, b.created_at,
+        pc.code as promo_code,
+        s.display_name as slon_name
+      FROM borovs b
+      LEFT JOIN promo_codes pc ON b.promo_code_id = pc.id
+      LEFT JOIN slons s ON pc.slon_id = s.id
+      WHERE b.id = $1
+    `, [borov_id]);
+
+    console.log('🔄 ADMIN: Borov query result:', borovResult.rows);
+
+    if (borovResult.rows.length === 0) {
+      console.log('❌ ADMIN: Borov not found for ID:', borov_id);
+      return res.status(404).json({ error: 'Borov not found' });
+    }
+
+    const borov = borovResult.rows[0];
+
+    // Статистика
+    const statsResult = await pool.query(`
+      SELECT total_vakhtas_completed, total_work_days, current_vakhta_id
+      FROM borov_stats
+      WHERE borov_id = $1
+    `, [borov_id]);
+
+    console.log('🔄 ADMIN: Stats result:', statsResult.rows);
+
+    // Анкета
+    const profileResult = await pool.query(`
+      SELECT * FROM borov_profiles WHERE borov_id = $1
+    `, [borov_id]);
+
+    console.log('🔄 ADMIN: Profile result:', profileResult.rows);
+
+    const response = {
+      ...borov,
+      stats: statsResult.rows[0] || { total_vakhtas_completed: 0, total_work_days: 0 },
+      profile: profileResult.rows[0] || null
+    };
+
+    console.log('✅ ADMIN: Sending response for borov:', borov.full_name);
+    res.json(response);
+  } catch (error) {
+    console.error('❌ ADMIN: Get simple borov profile error:', error);
+    res.status(500).json({ error: 'Internal server error: ' + error.message });
+  }
+};
+
+// В adminController.js добавить метод удаления борова
+const deleteBorov = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const { id } = req.params;
+
+    console.log('🔄 Starting delete borov process for ID:', id);
+
+    // 1. Проверяем существование борова
+    const borovCheck = await client.query(
+      'SELECT id, full_name FROM borovs WHERE id = $1',
+      [id]
+    );
+
+    if (borovCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Borov not found' });
+    }
+
+    const borov = borovCheck.rows[0];
+
+    // 2. Проверяем активные вахты
+    const activeVakhta = await client.query(
+      'SELECT COUNT(*) FROM borov_vakhta_history WHERE borov_id = $1 AND status = $2',
+      [id, 'active']
+    );
+
+    // 3. Проверяем активные специальности
+    const activeSpecialty = await client.query(
+      'SELECT COUNT(*) FROM borov_specialty_history WHERE borov_id = $1 AND status = $2',
+      [id, 'active']
+    );
+
+    if (parseInt(activeVakhta.rows[0].count) > 0 || parseInt(activeSpecialty.rows[0].count) > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'Cannot delete borov with active work assignments. Please remove from vakhtas/specialties first.'
+      });
+    }
+
+    console.log('✅ No active assignments found, proceeding with deletion...');
+
+    // 4. Удаляем историю специальностей
+    await client.query(
+      'DELETE FROM borov_specialty_history WHERE borov_id = $1',
+      [id]
+    );
+
+    // 5. Удаляем историю вахт
+    await client.query(
+      'DELETE FROM borov_vakhta_history WHERE borov_id = $1',
+      [id]
+    );
+
+    // 6. Удаляем анкету
+    await client.query(
+      'DELETE FROM borov_profiles WHERE borov_id = $1',
+      [id]
+    );
+
+    // 7. Удаляем статистику
+    await client.query(
+      'DELETE FROM borov_stats WHERE borov_id = $1',
+      [id]
+    );
+
+    // 8. Удаляем самого борова
+    const result = await client.query(
+      'DELETE FROM borovs WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    await client.query('COMMIT');
+
+    console.log('✅ Borov deleted successfully:', borov.full_name);
+    res.json({
+      message: `Borov "${borov.full_name}" deleted successfully`,
+      deleted_borov: result.rows[0]
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('❌ Delete borov error:', error);
+
+    let errorMessage = 'Internal server error';
+    if (error.code === '23503') {
+      errorMessage = 'Cannot delete borov - there are still related records in the database';
+    }
+
+    res.status(500).json({ error: errorMessage + ': ' + error.message });
+  } finally {
+    client.release();
+  }
+};
+
+const forceDeleteVakhta = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const { id } = req.params;
+
+    console.log('🔄 FORCE DELETE vakhta:', id);
+
+    // 1. Удаляем историю специальностей
+    await client.query(
+      `DELETE FROM borov_specialty_history
+       WHERE specialty_id IN (SELECT id FROM specialties WHERE vakhta_id = $1)`,
+      [id]
+    );
+
+    // 2. Удаляем специальности
+    await client.query(
+      'DELETE FROM specialties WHERE vakhta_id = $1',
+      [id]
+    );
+
+    // 3. Удаляем историю вахт
+    await client.query(
+      'DELETE FROM borov_vakhta_history WHERE vakhta_id = $1',
+      [id]
+    );
+
+    // 4. Обновляем статистику боровов
+    await client.query(
+      'UPDATE borov_stats SET current_vakhta_id = NULL WHERE current_vakhta_id = $1',
+      [id]
+    );
+
+    // 5. Удаляем вахту
+    const result = await client.query(
       'DELETE FROM vakhtas WHERE id = $1 RETURNING *',
       [id]
     );
 
     if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Vakhta not found' });
     }
 
-    res.json({ message: 'Vakhta deleted successfully' });
+    await client.query('COMMIT');
+    console.log('✅ Vakhta force deleted successfully:', id);
+    res.json({ message: 'Vakhta force deleted successfully' });
+
   } catch (error) {
-    console.error('Delete vakhta error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    await client.query('ROLLBACK');
+    console.error('❌ Force delete vakhta error:', error);
+    res.status(500).json({ error: 'Internal server error: ' + error.message });
+  } finally {
+    client.release();
   }
 };
-
 // Admin dashboard
 const getAdminDashboard = async (req, res) => {
   try {
@@ -735,5 +1345,13 @@ module.exports = {
   deleteSpecialty,
   deletePromoCode,
   deleteSlon,
-  deleteVakhta
+  deleteVakhta,
+  getBorovProfileSimple,
+  getVakhtaWorkers,
+      removeAllWorkersFromVakhta,
+      removeWorkerFromVakhta,
+      debugVakhtaWorkers,
+      deleteBorov,
+      removeBorovFromAllWork,
+      forceDeleteVakhta
 };

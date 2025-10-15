@@ -467,12 +467,61 @@ const loadSpecialty = async () => {
 
     const specialtyId = route.params.id
 
-    // Загружаем все предприятия и находим нужную специальность
-    const response = await $fetch('http://localhost:3001/api/vakhta', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    if (authStore.isAuthenticated) {
+      // Загрузка для авторизованного пользователя
+      const response = await $fetch('http://localhost:3001/api/vakhta', {
+        headers: { 'Authorization': `Bearer ${authStore.token}` }
+      })
 
-    // Ищем специальность по ID во всех предприятиях
+      // Ищем специальность по ID во всех предприятиях
+      let foundSpecialty = null
+      for (const enterprise of response) {
+        if (enterprise.specialties) {
+          const spec = enterprise.specialties.find((s: any) => s.id.toString() === specialtyId.toString())
+          if (spec) {
+            foundSpecialty = {
+              ...spec,
+              vakhta_title: enterprise.title,
+              location: enterprise.location,
+              start_date: enterprise.start_date,
+              end_date: enterprise.end_date,
+              free_places: spec.free_places || (spec.total_places - (spec.current_workers || 0))
+            }
+            break
+          }
+        }
+      }
+
+      if (foundSpecialty) {
+        specialty.value = foundSpecialty
+      } else {
+        error.value = true
+      }
+    } else {
+      // Загрузка для гостя - используем публичный эндпоинт
+      try {
+        const response = await $fetch(`http://localhost:3001/api/public/specialties/${specialtyId}`)
+        specialty.value = response
+      } catch (publicError) {
+        console.error('Public endpoint failed, trying fallback:', publicError)
+        // Fallback: попробуем получить через общий эндпоинт vakhta
+        await loadSpecialtyFallback(specialtyId)
+      }
+    }
+
+  } catch (err: any) {
+    console.error('Error loading specialty:', err)
+    error.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
+// Fallback метод для загрузки специальности
+const loadSpecialtyFallback = async (specialtyId: string) => {
+  try {
+    const response = await $fetch('http://localhost:3001/api/vakhta')
+
     let foundSpecialty = null
     for (const enterprise of response) {
       if (enterprise.specialties) {
@@ -496,17 +545,16 @@ const loadSpecialty = async () => {
     } else {
       error.value = true
     }
-
-  } catch (err: any) {
-    console.error('Error loading specialty:', err)
+  } catch (fallbackError) {
+    console.error('Fallback also failed:', fallbackError)
     error.value = true
-  } finally {
-    loading.value = false
   }
 }
 
 // Проверка активной специальности
 const checkActiveSpecialty = async () => {
+  if (!authStore.isAuthenticated) return
+
   try {
     const response = await $fetch('http://localhost:3001/api/borov/specialties/my', {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
@@ -519,6 +567,11 @@ const checkActiveSpecialty = async () => {
 
 // Запись на специальность
 const joinSpecialty = async () => {
+  if (!authStore.isAuthenticated) {
+    // Сохраняем ID специальности и перенаправляем на вход
+    return navigateTo(`/login?redirect=/borov/specialties/${specialty.value.id}`)
+  }
+
   try {
     joining.value = true
 

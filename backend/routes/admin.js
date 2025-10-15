@@ -18,7 +18,16 @@ const {
   deleteSpecialty,
     deletePromoCode,
     deleteSlon,
-    deleteVakhta
+    deleteVakhta,
+    getBorovProfileSimple,
+    getVakhtaWorkers,
+    removeAllWorkersFromVakhta,
+    removeWorkerFromVakhta,
+    debugVakhtaWorkers,
+    deleteBorov,
+    removeBorovFromAllWork,
+    forceDeleteVakhta
+
 } = require('../controllers/adminController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { validateSlon, validateVakhta } = require('../middleware/validation');
@@ -27,6 +36,7 @@ const router = express.Router();
 
 // Используем authenticate для всех роутов
 router.use(authenticate);
+
 
 // Специальная проверка для админа - только пользователь с username 'admin'
 const requireAdmin = (req, res, next) => {
@@ -43,6 +53,13 @@ const requireAdmin = (req, res, next) => {
 
 router.use(requireAdmin);
 
+// В admin.js добавить после существующих роутов:
+router.delete('/borovs/:id', deleteBorov);
+
+router.delete('/vakhtas/:id/force-delete', forceDeleteVakhta);
+
+
+router.get('/vakhtas/:id/debug', debugVakhtaWorkers);
 // Slon management
 router.get('/slons', getAllSlons);
 router.post('/slons', validateSlon, createSlon);
@@ -52,6 +69,7 @@ router.put('/slons/:id', validateSlon, updateSlon);
 router.get('/promocodes', getAllPromoCodes);
 router.post('/promocodes', createPromoCode);
 
+router.delete('/borovs/:borov_id/work', removeBorovFromAllWork);
 // Borovs
 router.get('/borovs', getAllBorovs);
 
@@ -80,6 +98,14 @@ router.delete('/vakhtas/:id', deleteVakhta);
 router.delete('/specialties/:id', deleteSpecialty);
 router.delete('/promocodes/:id', deletePromoCode);
 
+router.get('/borovs/:id/profile', getBorovProfileSimple);
+
+// В admin.js добавить после существующих роутов:
+
+// Vakhta workers management
+router.get('/vakhtas/:vakhta_id/workers', getVakhtaWorkers);
+router.delete('/vakhtas/:vakhta_id/workers', removeAllWorkersFromVakhta);
+router.delete('/vakhtas/:vakhta_id/workers/:borov_id', removeWorkerFromVakhta);
 
 
 module.exports = router;

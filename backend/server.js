@@ -61,6 +61,11 @@ app.get('/api/health', (req, res) => {
 // Authentication routes
 app.use('/api/auth', require('./routes/auth'));
 
+// После других роутов
+const publicRoutes = require('./routes/public');
+app.use('/api/public', publicRoutes);
+
+
 // API routes
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/slon', require('./routes/slon'));

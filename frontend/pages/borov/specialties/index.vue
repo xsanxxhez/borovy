@@ -15,6 +15,8 @@
       <div class="floating-element element-3"></div>
     </div>
 
+
+
     <!-- Кнопка мобильных фильтров -->
     <div class="mobile-filters-toggle">
       <button @click="toggleMobileFilters" class="btn btn-primary">
@@ -30,10 +32,6 @@
     </div>
 
     <div class="page-container">
-      <!-- Заголовок страницы -->
-
-
-
       <!-- Основной контент с фильтрами -->
       <div class="main-content">
         <!-- Боковые фильтры -->
@@ -84,10 +82,7 @@
                   type="text"
                   placeholder="Название, предприятие..."
                   class="search-input"
-                  @focus="searchFocused = true"
-                  @blur="searchFocused = false"
                 >
-                <div class="search-ripple" v-if="searchFocused"></div>
               </div>
             </div>
 
@@ -110,7 +105,7 @@
               </select>
             </div>
 
-            <!-- Зарплата (улучшенный ползунок) -->
+            <!-- Зарплата -->
             <div class="filter-group">
               <div class="filter-label">
                 <div class="filter-icon">
@@ -137,7 +132,6 @@
                     step="1000"
                     class="range-input range-min"
                     @input="updateSalaryRange"
-                    @mousedown="setActiveSlider('salary')"
                   >
                   <input
                     type="range"
@@ -147,7 +141,6 @@
                     step="1000"
                     class="range-input range-max"
                     @input="updateSalaryRange"
-                    @mousedown="setActiveSlider('salary')"
                   >
                 </div>
                 <div class="range-labels">
@@ -157,7 +150,7 @@
               </div>
             </div>
 
-            <!-- Длительность (улучшенный ползунок) -->
+            <!-- Длительность -->
             <div class="filter-group">
               <div class="filter-label">
                 <div class="filter-icon">
@@ -185,7 +178,6 @@
                     step="1"
                     class="range-input range-min"
                     @input="updateDurationRange"
-                    @mousedown="setActiveSlider('duration')"
                   >
                   <input
                     type="range"
@@ -195,7 +187,6 @@
                     step="1"
                     class="range-input range-max"
                     @input="updateDurationRange"
-                    @mousedown="setActiveSlider('duration')"
                   >
                 </div>
                 <div class="range-labels">
@@ -204,73 +195,13 @@
                 </div>
               </div>
             </div>
-
-            <!-- Тип занятости -->
-            <div class="filter-group">
-              <div class="filter-label">
-                <div class="filter-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span>Тип занятости</span>
-              </div>
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.employmentType" value="full">
-                  <span class="checkmark"></span>
-                  Полный день
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.employmentType" value="part">
-                  <span class="checkmark"></span>
-                  Частичная
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.employmentType" value="shift">
-                  <span class="checkmark"></span>
-                  Сменная
-                </label>
-              </div>
-            </div>
-
-            <!-- Опыт работы -->
-            <div class="filter-group">
-              <div class="filter-label">
-                <div class="filter-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M19.4 15C19.2669 15.3031 19.1338 15.6062 19.0007 15.9094C18.6131 16.7484 18.2255 17.5875 17.8379 18.4266C17.322 19.5497 16.8061 20.6728 16.2902 21.7959C15.9193 22.6172 15.0879 23.1484 14.186 23.1484H9.814C8.91211 23.1484 8.08066 22.6172 7.70977 21.7959C7.19385 20.6728 6.67793 19.5497 6.16201 18.4266C5.77441 17.5875 5.3868 16.7484 4.9992 15.9094C4.86613 15.6062 4.73306 15.3031 4.6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M4.6 9C4.73306 8.69687 4.86613 8.39375 4.9992 8.09063C5.3868 7.25156 5.77441 6.4125 6.16201 5.57344C6.67793 4.45031 7.19385 3.32719 7.70977 2.20406C8.08066 1.38281 8.91211 0.851562 9.814 0.851562H14.186C15.0879 0.851562 15.9193 1.38281 16.2902 2.20406C16.8061 3.32719 17.322 4.45031 17.8379 5.57344C18.2255 6.4125 18.6131 7.25156 19.0007 8.09063C19.1338 8.39375 19.2669 8.69687 19.4 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span>Опыт работы</span>
-              </div>
-              <div class="checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.experience" value="none">
-                  <span class="checkmark"></span>
-                  Без опыта
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.experience" value="junior">
-                  <span class="checkmark"></span>
-                  До 1 года
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" v-model="filters.experience" value="middle">
-                  <span class="checkmark"></span>
-                  1-3 года
-                </label>
-              </div>
-            </div>
           </div>
         </div>
 
         <!-- Основная область контента -->
         <div class="content-area">
           <!-- Баннер активной работы -->
-          <div v-if="hasActiveSpecialty" class="warning-banner">
+          <div v-if="hasActiveSpecialty && authStore.isAuthenticated" class="warning-banner">
             <div class="banner-glow"></div>
             <div class="warning-content">
               <div class="warning-icon">
@@ -343,17 +274,7 @@
               class="specialty-card"
               :class="{ 'featured': isFeatured(specialty) }"
             >
-              <div class="card-glow"></div>
 
-              <!-- Бейдж для избранных -->
-              <div v-if="isFeatured(specialty)" class="featured-badge">
-                <div class="badge-icon">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
-                  </svg>
-                </div>
-                Рекомендуем
-              </div>
 
               <div class="specialty-header">
                 <div class="specialty-main">
@@ -455,7 +376,7 @@
                 </nuxt-link>
 
                 <button
-                  v-if="!hasActiveSpecialty && specialty.free_places > 0"
+                  v-if="authStore.isAuthenticated && !hasActiveSpecialty && specialty.free_places > 0"
                   @click="joinSpecialty(specialty.id)"
                   :disabled="joiningSpecialty === specialty.id"
                   :class="['btn', 'btn-primary', 'btn-large', { 'loading': joiningSpecialty === specialty.id }]"
@@ -472,11 +393,19 @@
                 </button>
 
                 <button
-                  v-else-if="hasActiveSpecialty"
+                  v-else-if="authStore.isAuthenticated && hasActiveSpecialty"
                   disabled
                   class="btn btn-disabled btn-large"
                 >
                   <span class="button-text">У вас есть активная работа</span>
+                </button>
+
+                <button
+                  v-else-if="!authStore.isAuthenticated"
+                  @click="redirectToLogin"
+                  class="btn btn-primary btn-large"
+                >
+                  <span class="button-text">Войти для записи</span>
                 </button>
 
                 <button
@@ -510,16 +439,16 @@
 
 <script setup lang="ts">
 const authStore = useAuthStore()
+const router = useRouter()
 
+// Реактивные данные
 const specialties = ref([])
 const loading = ref(false)
 const joiningSpecialty = ref(null)
 const showSuccess = ref(false)
 const joinedSpecialtyTitle = ref('')
 const hasActiveSpecialty = ref(false)
-const searchFocused = ref(false)
 const showMobileFilters = ref(false)
-const activeSlider = ref<string | null>(null)
 
 // Диапазоны для ползунков
 const salaryRange = {
@@ -565,76 +494,12 @@ const durationProgressStyle = computed(() => {
   }
 })
 
-// Функции для обновления диапазонов
-const updateSalaryRange = () => {
-  if (filters.salary[0] > filters.salary[1]) {
-    if (activeSlider.value === 'salary') {
-      filters.salary[0] = filters.salary[1]
-    } else {
-      filters.salary[1] = filters.salary[0]
-    }
-  }
-}
+// Уникальные локации для фильтра
+const locations = computed(() => {
+  return [...new Set(specialties.value.map(s => s.location))].sort()
+})
 
-const updateDurationRange = () => {
-  if (filters.duration[0] > filters.duration[1]) {
-    if (activeSlider.value === 'duration') {
-      filters.duration[0] = filters.duration[1]
-    } else {
-      filters.duration[1] = filters.duration[0]
-    }
-  }
-}
-
-const setActiveSlider = (type: string) => {
-  activeSlider.value = type
-}
-
-// Загрузка специальностей
-const loadSpecialties = async () => {
-  try {
-    loading.value = true
-    const response = await $fetch('http://localhost:3001/api/vakhta', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
-
-    const allSpecialties = []
-    response.forEach(vakhta => {
-      if (vakhta.specialties && vakhta.specialties.length > 0) {
-        vakhta.specialties.forEach(specialty => {
-          allSpecialties.push({
-            ...specialty,
-            vakhta_title: vakhta.title,
-            location: vakhta.location,
-            start_date: vakhta.start_date,
-            end_date: vakhta.end_date,
-            free_places: specialty.free_places || (specialty.total_places - (specialty.current_workers || 0))
-          })
-        })
-      }
-    })
-
-    specialties.value = allSpecialties
-  } catch (error) {
-    console.error('Error loading specialties:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// Проверка активной специальности
-const checkActiveSpecialty = async () => {
-  try {
-    const response = await $fetch('http://localhost:3001/api/borov/specialties/my', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
-    hasActiveSpecialty.value = response.some((s: any) => s.status === 'active')
-  } catch (error) {
-    console.error('Error checking active specialty:', error)
-  }
-}
-
-// Фильтрация
+// Фильтрация специальностей
 const filteredSpecialties = computed(() => {
   let filtered = [...specialties.value]
 
@@ -666,68 +531,117 @@ const filteredSpecialties = computed(() => {
     })
   }
 
-  // Фильтрация по типу занятости
-  if (filters.employmentType.length > 0) {
-    // Здесь можно добавить логику фильтрации по типу занятости
-    // если в данных появится соответствующее поле
-  }
-
-  // Фильтрация по опыту работы
-  if (filters.experience.length > 0) {
-    // Здесь можно добавить логику фильтрации по опыту
-    // если в данных появится соответствующее поле
-  }
-
   return filtered
 })
 
-// Статистика
-const totalSpecialties = computed(() => {
-  return specialties.value.length
-})
-
-const uniqueLocations = computed(() => {
-  return new Set(specialties.value.map(s => s.location)).size
-})
-
-const averageSalary = computed(() => {
-  if (specialties.value.length === 0) return 0
-  const total = specialties.value.reduce((sum, s) => sum + s.salary, 0)
-  return Math.round(total / specialties.value.length)
-})
-
-// Уникальные локации для фильтра
-const locations = computed(() => {
-  return [...new Set(specialties.value.map(s => s.location))].sort()
-})
-
-// Функции для мобильных фильтров
-const toggleMobileFilters = () => {
-  showMobileFilters.value = !showMobileFilters.value
-}
-
-const closeMobileFilters = () => {
-  showMobileFilters.value = false
-}
-
-const handleResize = () => {
-  if (window.innerWidth > 1024) {
-    showMobileFilters.value = false
+// Функции для обновления диапазонов
+const updateSalaryRange = () => {
+  if (filters.salary[0] > filters.salary[1]) {
+    filters.salary[0] = filters.salary[1]
   }
 }
 
-// Закрытие фильтров по клику вне области
-const filtersSidebar = ref(null)
-
-const handleClickOutside = (event: Event) => {
-  if (filtersSidebar.value && !filtersSidebar.value.contains(event.target) &&
-      !event.target.closest('.mobile-filters-toggle')) {
-    closeMobileFilters()
+const updateDurationRange = () => {
+  if (filters.duration[0] > filters.duration[1]) {
+    filters.duration[0] = filters.duration[1]
   }
 }
 
-// Действия
+// Загрузка специальностей
+const loadSpecialties = async () => {
+  try {
+    loading.value = true;
+
+    if (authStore.isAuthenticated) {
+      // Загрузка для авторизованных пользователей
+      const response = await $fetch('http://localhost:3001/api/vakhta', {
+        headers: { 'Authorization': `Bearer ${authStore.token}` }
+      });
+      processSpecialties(response);
+    } else {
+      // Загрузка для гостей - используем публичный эндпоинт
+      const response = await $fetch('http://localhost:3001/api/public/specialties');
+      processPublicSpecialties(response); // Новая функция для обработки публичных данных
+    }
+  } catch (error) {
+    console.error('Error loading specialties:', error);
+
+    // Fallback: попробуем получить данные через vakhta роут
+    try {
+      const response = await $fetch('http://localhost:3001/api/vakhta');
+      processSpecialties(response);
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
+    }
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Новая функция для обработки публичных данных
+const processPublicSpecialties = (response) => {
+  const allSpecialties = [];
+
+  response.forEach(vakhta => {
+    if (vakhta.specialties && vakhta.specialties.length > 0) {
+      vakhta.specialties.forEach(specialty => {
+        if (specialty.id) { // Проверяем, что specialty существует
+          allSpecialties.push({
+            ...specialty,
+            vakhta_title: vakhta.title,
+            location: vakhta.location,
+            start_date: vakhta.start_date,
+            end_date: vakhta.end_date,
+            free_places: specialty.free_places || (specialty.total_places - (specialty.current_workers || 0))
+          });
+        }
+      });
+    }
+  });
+
+  specialties.value = allSpecialties;
+}
+
+// Обработка данных специальностей
+const processSpecialties = (response: any[]) => {
+  const allSpecialties = []
+  response.forEach(vakhta => {
+    if (vakhta.specialties && vakhta.specialties.length > 0) {
+      vakhta.specialties.forEach(specialty => {
+        allSpecialties.push({
+          ...specialty,
+          vakhta_title: vakhta.title,
+          location: vakhta.location,
+          start_date: vakhta.start_date,
+          end_date: vakhta.end_date,
+          free_places: specialty.free_places || (specialty.total_places - (specialty.current_workers || 0))
+        })
+      })
+    }
+  })
+  specialties.value = allSpecialties
+}
+
+// Проверка активной специальности
+const checkActiveSpecialty = async () => {
+  if (!authStore.isAuthenticated) return
+
+  try {
+    const response = await $fetch('http://localhost:3001/api/borov/specialties/my', {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    hasActiveSpecialty.value = response.some((s: any) => s.status === 'active')
+  } catch (error) {
+    console.error('Error checking active specialty:', error)
+  }
+}
+
+// Запись на специальность
 const joinSpecialty = async (specialtyId: number) => {
+  if (!authStore.isAuthenticated) {
+    return redirectToLogin()
+  }
+
   try {
     joiningSpecialty.value = specialtyId
 
@@ -755,6 +669,20 @@ const joinSpecialty = async (specialtyId: number) => {
   }
 }
 
+// Редирект на страницу входа
+const redirectToLogin = () => {
+  navigateTo('/login')
+}
+
+// Функции для мобильных фильтров
+const toggleMobileFilters = () => {
+  showMobileFilters.value = !showMobileFilters.value
+}
+
+const closeMobileFilters = () => {
+  showMobileFilters.value = false
+}
+
 const clearFilters = () => {
   Object.assign(filters, {
     search: '',
@@ -764,6 +692,22 @@ const clearFilters = () => {
     employmentType: [],
     experience: []
   })
+}
+
+// Закрытие фильтров по клику вне области
+const filtersSidebar = ref(null)
+
+const handleClickOutside = (event: Event) => {
+  if (filtersSidebar.value && !filtersSidebar.value.contains(event.target) &&
+      !event.target.closest('.mobile-filters-toggle')) {
+    closeMobileFilters()
+  }
+}
+
+const handleResize = () => {
+  if (window.innerWidth > 1024) {
+    showMobileFilters.value = false
+  }
 }
 
 // Вспомогательные функции
@@ -792,9 +736,9 @@ const getPlacesClass = (freePlaces: number) => {
   return 'available'
 }
 
-const isFeatured = (specialty: any) => {
-  return specialty.salary >= 6000 || specialty.free_places <= 2
-}
+    const isFeatured = (specialty: any ) => {
+      return specialty.salary >= 60000 || specialty.free_places <= 2
+    }
 
 // Инициализация
 onMounted(async () => {
@@ -2286,4 +2230,90 @@ onUnmounted(() => {
   outline: 2px solid rgba(212, 175, 55, 0.5);
   outline-offset: 2px;
 }
+
+.specialties-page {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background: #0a0a0a;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+
+
+.guest-banner {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 25px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.guest-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.guest-icon {
+  width: 50px;
+  height: 50px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.guest-text strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.guest-text p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+}
+
+.guest-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Адаптивность для гостевого баннера */
+@media (max-width: 768px) {
+  .guest-banner {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .guest-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .guest-actions {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 </style>
+
+

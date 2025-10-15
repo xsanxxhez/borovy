@@ -156,43 +156,7 @@
               </p>
             </div>
 
-            <!-- Улучшенный блок тестовых данных -->
-            <div class="test-credentials">
-              <div class="test-header" @click="toggleTestData">
-                <span>Тестовые доступы</span>
-                <div class="test-icon" :class="{ rotated: showTestData }">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-              </div>
-              <transition name="slide">
-                <div class="test-content" v-if="showTestData">
-                  <div class="test-item" @click="fillTestData('admin')">
-                    <div class="test-role">
-                      <div class="role-icon admin"></div>
-                      <div>
-                        <strong>Администратор</strong>
-                        <span>admin / admin123</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="test-item" @click="fillTestData('slon')">
-                    <div class="test-role">
-                      <div class="role-icon slon"></div>
-                      <div>
-                        <strong>Слон</strong>
-                        <span>slon1 / slon123</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="test-note">
-                    <small>Для Борова - сначала регистрация через промокод</small>
-                  </div>
-                </div>
-              </transition>
             </div>
-          </div>
         </div>
       </div>
 

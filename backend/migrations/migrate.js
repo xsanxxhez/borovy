@@ -169,6 +169,7 @@ const createTables = async () => {
       ALTER TABLE vakhtas ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
       ALTER TABLE specialties ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
       ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+      ALTER TABLE vakhtas ADD COLUMN IF NOT EXISTS current_workers INTEGER DEFAULT 0;
     `);
     console.log('✅ Soft delete columns added');
 

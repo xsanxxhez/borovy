@@ -398,40 +398,48 @@ const getAvailableVakhtas = async (req, res) => {
   }
 };
 
-// УЛУЧШЕННЫЙ МЕТОД ДЛЯ ЗАПИСИ НА ВАХТУ
+// В borovController.js обновим метод joinVakhta
 const joinVakhta = async (req, res) => {
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN');
     const { vakhta_id } = req.body;
     const borov_id = req.user.id;
 
+    console.log('🔄 Joining vakhta:', { vakhta_id, borov_id });
+
     // Проверяем существование вахты
-    const vakhtaResult = await pool.query(`
+    const vakhtaResult = await client.query(`
       SELECT *,
              (SELECT COUNT(*) FROM borov_vakhta_history
-              WHERE vakhta_id = $1 AND status = 'active') as current_workers
+              WHERE vakhta_id = $1 AND status = 'active') as current_workers_count
       FROM vakhtas
       WHERE id = $1 AND is_active = true
     `, [vakhta_id]);
 
     if (vakhtaResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Vakhta not found or not active' });
     }
 
     const vakhta = vakhtaResult.rows[0];
 
-    // Проверяем свободные места
+    // Проверяем свободные места (используем current_workers из таблицы vakhtas)
     if (vakhta.current_workers >= vakhta.total_places) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'No free places available' });
     }
 
     // Проверяем активные вахты
-    const activeVakhtaResult = await pool.query(
+    const activeVakhtaResult = await client.query(
       `SELECT id, vakhta_id FROM borov_vakhta_history
        WHERE borov_id = $1 AND status = 'active'`,
       [borov_id]
     );
 
     if (activeVakhtaResult.rows.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({
         error: 'You already have an active vakhta',
         active_vakhta_id: activeVakhtaResult.rows[0].vakhta_id
@@ -439,18 +447,28 @@ const joinVakhta = async (req, res) => {
     }
 
     // Записываем на вахту
-    await pool.query(
+    await client.query(
       `INSERT INTO borov_vakhta_history (borov_id, vakhta_id, start_date, status)
        VALUES ($1, $2, $3, 'active')`,
       [borov_id, vakhta_id, vakhta.start_date]
     );
 
+    // ОБНОВЛЯЕМ СЧЕТЧИК НА ВАХТЕ
+    await client.query(`
+      UPDATE vakhtas
+      SET current_workers = COALESCE(current_workers, 0) + 1
+      WHERE id = $1
+    `, [vakhta_id]);
+
     // Обновляем статистику
-    await pool.query(
+    await client.query(
       'UPDATE borov_stats SET current_vakhta_id = $1 WHERE borov_id = $2',
       [vakhta_id, borov_id]
     );
 
+    await client.query('COMMIT');
+
+    console.log('✅ Successfully joined vakhta:', vakhta.title);
     res.json({
       message: 'Successfully joined vakhta',
       vakhta: {
@@ -460,18 +478,24 @@ const joinVakhta = async (req, res) => {
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Join vakhta error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 };
 
-// НОВЫЙ МЕТОД ДЛЯ ВЫХОДА С ВАХТЫ
+// В borovController.js обновим метод leaveVakhta
 const leaveVakhta = async (req, res) => {
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN');
     const borov_id = req.user.id;
 
     // Находим активную вахту
-    const activeVakhta = await pool.query(
+    const activeVakhta = await client.query(
       `SELECT bvh.id, bvh.vakhta_id, v.title
        FROM borov_vakhta_history bvh
        JOIN vakhtas v ON bvh.vakhta_id = v.id
@@ -480,33 +504,49 @@ const leaveVakhta = async (req, res) => {
     );
 
     if (activeVakhta.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'No active vakhta found' });
     }
 
+    const vakhta = activeVakhta.rows[0];
+
     // Обновляем статус на 'completed'
-    await pool.query(
+    await client.query(
       `UPDATE borov_vakhta_history
        SET status = 'completed', end_date = NOW()
        WHERE id = $1`,
-      [activeVakhta.rows[0].id]
+      [vakhta.id]
     );
 
+    // ОБНОВЛЯЕМ СЧЕТЧИК НА ВАХТЕ
+    await client.query(`
+      UPDATE vakhtas
+      SET current_workers = GREATEST(COALESCE(current_workers, 0) - 1, 0)
+      WHERE id = $1
+    `, [vakhta.vakhta_id]);
+
     // Обновляем статистику
-    await pool.query(
+    await client.query(
       'UPDATE borov_stats SET current_vakhta_id = NULL WHERE borov_id = $1',
       [borov_id]
     );
 
+    await client.query('COMMIT');
+
+    console.log('✅ Successfully left vakhta:', vakhta.title);
     res.json({
       message: 'Successfully left vakhta',
       vakhta: {
-        id: activeVakhta.rows[0].vakhta_id,
-        title: activeVakhta.rows[0].title
+        id: vakhta.vakhta_id,
+        title: vakhta.title
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Leave vakhta error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 };
 
@@ -543,13 +583,18 @@ const getAvailableSpecialties = async (req, res) => {
   }
 };
 
-// УЛУЧШЕННЫЙ МЕТОД ДЛЯ ЗАПИСИ НА СПЕЦИАЛЬНОСТЬ
+// В borovController.js обновим метод joinSpecialty
 const joinSpecialty = async (req, res) => {
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN');
     const { specialty_id } = req.body;
     const borov_id = req.user.id;
 
-    const specialtyResult = await pool.query(`
+    console.log('🔄 Joining specialty:', { specialty_id, borov_id });
+
+    const specialtyResult = await client.query(`
       SELECT s.*, v.title as vakhta_title, v.start_date, v.id as vakhta_id,
              (SELECT COUNT(*) FROM borov_specialty_history
               WHERE specialty_id = $1 AND status = 'active') as current_workers
@@ -559,16 +604,18 @@ const joinSpecialty = async (req, res) => {
     `, [specialty_id]);
 
     if (specialtyResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Specialty not found or not active' });
     }
 
     const specialty = specialtyResult.rows[0];
     if (specialty.current_workers >= specialty.total_places) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'No free places available for this specialty' });
     }
 
     // Проверяем активные специальности
-    const activeSpecialtyResult = await pool.query(
+    const activeSpecialtyResult = await client.query(
       `SELECT bsh.id, s.title, s.id as specialty_id
        FROM borov_specialty_history bsh
        JOIN specialties s ON bsh.specialty_id = s.id
@@ -577,6 +624,7 @@ const joinSpecialty = async (req, res) => {
     );
 
     if (activeSpecialtyResult.rows.length > 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({
         error: `You already have an active specialty: ${activeSpecialtyResult.rows[0].title}`,
         active_specialty_id: activeSpecialtyResult.rows[0].specialty_id
@@ -584,18 +632,28 @@ const joinSpecialty = async (req, res) => {
     }
 
     // Записываем на специальность
-    await pool.query(
+    await client.query(
       `INSERT INTO borov_specialty_history (borov_id, specialty_id, start_date, status)
        VALUES ($1, $2, $3, 'active')`,
       [borov_id, specialty_id, specialty.start_date]
     );
 
+    // ОБНОВЛЯЕМ СЧЕТЧИК НА ВАХТЕ - добавляем работника
+    await client.query(`
+      UPDATE vakhtas
+      SET current_workers = COALESCE(current_workers, 0) + 1
+      WHERE id = $1
+    `, [specialty.vakhta_id]);
+
     // Обновляем статистику
-    await pool.query(
+    await client.query(
       'UPDATE borov_stats SET current_vakhta_id = $1 WHERE borov_id = $2',
       [specialty.vakhta_id, borov_id]
     );
 
+    await client.query('COMMIT');
+
+    console.log('✅ Successfully joined specialty:', specialty.title);
     res.json({
       message: `Successfully joined specialty: ${specialty.title}`,
       specialty: {
@@ -606,18 +664,24 @@ const joinSpecialty = async (req, res) => {
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Join specialty error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 };
 
-// НОВЫЙ МЕТОД ДЛЯ ВЫХОДА ИЗ СПЕЦИАЛЬНОСТИ
+// В borovController.js обновим метод leaveSpecialty
 const leaveSpecialty = async (req, res) => {
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN');
     const borov_id = req.user.id;
 
     // Находим активную специальность
-    const activeSpecialty = await pool.query(
+    const activeSpecialty = await client.query(
       `SELECT bsh.id, bsh.specialty_id, s.title, s.vakhta_id
        FROM borov_specialty_history bsh
        JOIN specialties s ON bsh.specialty_id = s.id
@@ -626,33 +690,49 @@ const leaveSpecialty = async (req, res) => {
     );
 
     if (activeSpecialty.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ error: 'No active specialty found' });
     }
 
+    const specialty = activeSpecialty.rows[0];
+
     // Обновляем статус на 'completed'
-    await pool.query(
+    await client.query(
       `UPDATE borov_specialty_history
        SET status = 'completed', end_date = NOW()
        WHERE id = $1`,
-      [activeSpecialty.rows[0].id]
+      [specialty.id]
     );
 
+    // ОБНОВЛЯЕМ СЧЕТЧИК НА ВАХТЕ - убираем работника
+    await client.query(`
+      UPDATE vakhtas
+      SET current_workers = GREATEST(COALESCE(current_workers, 0) - 1, 0)
+      WHERE id = $1
+    `, [specialty.vakhta_id]);
+
     // Обновляем статистику
-    await pool.query(
+    await client.query(
       'UPDATE borov_stats SET current_vakhta_id = NULL WHERE borov_id = $1',
       [borov_id]
     );
 
+    await client.query('COMMIT');
+
+    console.log('✅ Successfully left specialty:', specialty.title);
     res.json({
       message: 'Successfully left specialty',
       specialty: {
-        id: activeSpecialty.rows[0].specialty_id,
-        title: activeSpecialty.rows[0].title
+        id: specialty.specialty_id,
+        title: specialty.title
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Leave specialty error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 };
 

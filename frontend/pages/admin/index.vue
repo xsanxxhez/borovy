@@ -208,6 +208,182 @@
       </div>
     </div>
 
+
+    <!-- Модальное окно просмотра профиля борова -->
+    <div v-if="showBorovProfileModal" class="modal-overlay">
+      <div class="modal-content borov-profile-modal">
+        <div class="modal-header">
+          <h3>👤 Профиль Борова</h3>
+          <button @click="closeBorovProfileModal" class="close-btn">✕</button>
+        </div>
+
+        <div v-if="selectedBorov" class="borov-profile-content">
+          <!-- Основная информация -->
+          <div class="profile-section">
+            <div class="profile-header">
+              <div class="avatar-section">
+                <div class="avatar-placeholder">💪</div>
+                <div class="user-info">
+                  <h4>{{ selectedBorov.full_name }}</h4>
+                  <p class="user-meta">
+                    Возраст: {{ calculateAge(selectedBorov.birth_date) }} лет
+                  </p>
+                  <p class="user-meta">
+                    Зарегистрирован: {{ formatDate(selectedBorov.created_at) }}
+                  </p>
+                </div>
+              </div>
+              <div class="status-info">
+                <span :class="['status-badge', selectedBorov.current_vakhta_id ? 'active' : 'inactive']">
+                  {{ selectedBorov.current_vakhta_id ? 'Работает' : 'Свободен' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="contact-info">
+              <div class="contact-item">
+                <span class="contact-icon">📧</span>
+                <span>{{ selectedBorov.email }}</span>
+              </div>
+              <div class="contact-item">
+                <span class="contact-icon">📱</span>
+                <span>{{ selectedBorov.phone }}</span>
+              </div>
+              <div class="contact-item" v-if="selectedBorov.promo_code">
+                <span class="contact-icon">🎫</span>
+                <span>Промокод: {{ selectedBorov.promo_code }} ({{ selectedBorov.slon_name }})</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Статистика -->
+          <div class="profile-section">
+            <h5>📊 Статистика</h5>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-value">{{ selectedBorov.total_vakhtas_completed || 0 }}</span>
+                <span class="stat-label">Завершено вахт</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value">{{ selectedBorov.total_work_days || 0 }}</span>
+                <span class="stat-label">Отработано дней</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Текущая работа -->
+          <div class="profile-section" v-if="selectedBorov.active_specialty || selectedBorov.active_vakhta">
+            <h5>💼 Текущая работа</h5>
+            <div class="current-work">
+              <div v-if="selectedBorov.active_specialty" class="work-item">
+                <span class="work-icon">👷</span>
+                <div class="work-details">
+                  <strong>{{ selectedBorov.active_specialty.specialty_title }}</strong>
+                  <p>{{ selectedBorov.active_specialty.vakhta_title }}</p>
+                  <small>С: {{ formatDate(selectedBorov.active_specialty.start_date) }}</small>
+                </div>
+              </div>
+              <div v-else-if="selectedBorov.active_vakhta" class="work-item">
+                <span class="work-icon">🏗️</span>
+                <div class="work-details">
+                  <strong>{{ selectedBorov.active_vakhta.vakhta_title }}</strong>
+                  <small>С: {{ formatDate(selectedBorov.active_vakhta.start_date) }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Анкета -->
+          <div class="profile-section" v-if="selectedBorov.profile">
+            <h5>📝 Анкета</h5>
+
+            <div v-if="selectedBorov.profile.about_me" class="profile-field">
+              <label>О себе:</label>
+              <p>{{ selectedBorov.profile.about_me }}</p>
+            </div>
+
+            <div v-if="selectedBorov.profile.specialization" class="profile-field">
+              <label>Специализация:</label>
+              <div class="tags">
+                <span v-for="spec in selectedBorov.profile.specialization" :key="spec" class="tag">
+                  {{ spec }}
+                </span>
+              </div>
+            </div>
+
+            <div v-if="selectedBorov.profile.experience_years" class="profile-field">
+              <label>Опыт работы:</label>
+              <p>{{ selectedBorov.profile.experience_years }} лет</p>
+            </div>
+
+            <div v-if="selectedBorov.profile.experience_description" class="profile-field">
+              <label>Описание опыта:</label>
+              <p>{{ selectedBorov.profile.experience_description }}</p>
+            </div>
+
+            <div v-if="selectedBorov.profile.skills" class="profile-field">
+              <label>Навыки:</label>
+              <div class="tags">
+                <span v-for="skill in selectedBorov.profile.skills" :key="skill" class="tag">
+                  {{ skill }}
+                </span>
+              </div>
+            </div>
+
+            <div v-if="selectedBorov.profile.driver_license_category" class="profile-field">
+              <label>Водительские права:</label>
+              <div class="tags">
+                <span v-for="category in selectedBorov.profile.driver_license_category" :key="category" class="tag">
+                  {{ category }}
+                </span>
+              </div>
+            </div>
+
+            <div v-if="selectedBorov.profile.preferred_work_types" class="profile-field">
+              <label>Предпочтительные виды работ:</label>
+              <div class="tags">
+                <span v-for="type in selectedBorov.profile.preferred_work_types" :key="type" class="tag">
+                  {{ type }}
+                </span>
+              </div>
+            </div>
+
+            <div class="profile-details-grid">
+              <div v-if="selectedBorov.profile.has_car !== null" class="detail-item">
+                <label>Есть автомобиль:</label>
+                <span :class="['status-indicator', selectedBorov.profile.has_car ? 'yes' : 'no']">
+                  {{ selectedBorov.profile.has_car ? 'Да' : 'Нет' }}
+                </span>
+              </div>
+
+              <div v-if="selectedBorov.profile.has_tools !== null" class="detail-item">
+                <label>Есть инструменты:</label>
+                <span :class="['status-indicator', selectedBorov.profile.has_tools ? 'yes' : 'no']">
+                  {{ selectedBorov.profile.has_tools ? 'Да' : 'Нет' }}
+                </span>
+              </div>
+
+              <div v-if="selectedBorov.profile.work_radius" class="detail-item">
+                <label>Радиус работы:</label>
+                <span>{{ selectedBorov.profile.work_radius }} км</span>
+              </div>
+
+              <div v-if="selectedBorov.profile.salary_expectations" class="detail-item">
+                <label>Ожидания по зарплате:</label>
+                <span>{{ formatSalary(selectedBorov.profile.salary_expectations) }} руб/день</span>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="profile-section">
+            <div class="no-profile">
+              <p>😔 Боров еще не заполнил анкету</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Модальное окно создания специальности -->
     <div v-if="showCreateSpecialtyModal" class="modal-overlay">
       <div class="modal-content">
@@ -420,36 +596,54 @@
                   <p class="workers">👥 {{ vakhta.current_workers || 0 }}/{{ vakhta.total_places }} работников</p>
                 </div>
 
-                <div class="enterprise-actions">
-                  <button
-                    @click.stop="showCreateSpecialty(vakhta)"
-                    class="btn btn-success btn-sm"
-                    title="Добавить специальность"
-                  >
-                    ➕ Специальность
-                  </button>
-                  <button
-                    @click.stop="toggleVakhtaStatus(vakhta)"
-                    :class="['btn', 'btn-sm', vakhta.is_active ? 'btn-warning' : 'btn-success']"
-                    title="Переключить статус"
-                  >
-                    {{ vakhta.is_active ? '⏸️ Стоп' : '▶️ Старт' }}
-                  </button>
-                  <button
-                    @click.stop="openDeleteModal('vakhta', vakhta)"
-                    class="btn btn-danger btn-sm"
-                    title="Удалить предприятие"
-                  >
-                    🗑️
-                  </button>
-                  <button
-                    @click.stop="toggleVakhtaExpansion(vakhta.id)"
-                    class="btn btn-outline btn-sm"
-                    title="Показать/скрыть специальности"
-                  >
-                    {{ expandedVakhtas.includes(vakhta.id) ? '▲' : '▼' }}
-                  </button>
-                </div>
+               <!-- В enterprise-actions заменить кнопку удаления -->
+               <div class="enterprise-actions">
+                 <button
+                   @click.stop="showCreateSpecialty(vakhta)"
+                   class="btn btn-success btn-sm"
+                   title="Добавить специальность"
+                 >
+                   ➕ Специальность
+                 </button>
+                 <button
+                   @click.stop="toggleVakhtaStatus(vakhta)"
+                   :class="['btn', 'btn-sm', vakhta.is_active ? 'btn-warning' : 'btn-success']"
+                   title="Переключить статус"
+                 >
+                   {{ vakhta.is_active ? '⏸️ Стоп' : '▶️ Старт' }}
+                 </button>
+                 <!-- Новая кнопка управления работниками -->
+                 <button
+                   @click.stop="manageVakhtaWorkers(vakhta)"
+                   class="btn btn-info btn-sm"
+                   title="Управление работниками"
+                 >
+                   👥 Работники
+                 </button>
+                 <button
+                   @click.stop="openDeleteModal('vakhta', vakhta)"
+                   class="btn btn-danger btn-sm"
+                   title="Удалить предприятие"
+                 >
+                   🗑️
+                 </button>
+                 <button
+                   @click.stop="toggleVakhtaExpansion(vakhta.id)"
+                   class="btn btn-outline btn-sm"
+                   title="Показать/скрыть специальности"
+                 >
+                   {{ expandedVakhtas.includes(vakhta.id) ? '▲' : '▼' }}
+                 </button>
+                 <!-- В enterprise-actions добавьте эту кнопку -->
+                 <button
+                   @click.stop="universalRemoveWorkers(vakhta)"
+                   class="btn btn-danger btn-sm"
+                   title="Принудительно снять всех работников"
+                   v-if="vakhta.current_workers > 0"
+                 >
+                   💥 Снять всех
+                 </button>
+               </div>
               </div>
 
               <!-- Специальности предприятия -->
@@ -599,6 +793,26 @@
                       </div>
                     </div>
                   </td>
+                  <!-- В таблице боровов обновим колонку действий -->
+                  <td>
+                    <div class="action-buttons">
+                      <button
+                        @click="viewBorovProfile(borov)"
+                        class="btn btn-primary btn-sm"
+                        title="Просмотреть профиль"
+                      >
+                        👁️ Профиль
+                      </button>
+                      <button
+                        @click="openDeleteModal('borov', borov)"
+                        class="btn btn-danger btn-sm"
+                        title="Удалить борова"
+                        :disabled="borov.current_vakhta"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
                   <td>
                     <div class="contact-info">
                       <div class="contact-item">📧 {{ borov.email }}</div>
@@ -631,6 +845,107 @@
             </table>
           </div>
         </div>
+
+
+
+
+<!-- Модальное окно управления работниками вахты -->
+<div v-if="showVakhtaWorkersModal" class="modal-overlay">
+  <div class="modal-content vakhta-workers-modal">
+    <div class="modal-header">
+      <h3>👥 Управление работниками вахты</h3>
+      <button @click="closeVakhtaWorkersModal" class="close-btn">✕</button>
+    </div>
+
+    <div v-if="selectedVakhtaForWorkers" class="vakhta-workers-content">
+      <!-- Информация о вахте -->
+      <div class="vakhta-info-section">
+        <h4>{{ selectedVakhtaForWorkers.title }}</h4>
+        <p class="location">📍 {{ selectedVakhtaForWorkers.location }}</p>
+        <p class="workers-count">
+          Активных работников: <strong>{{ selectedVakhtaForWorkers.current_workers || 0 }}</strong>
+        </p>
+        <p class="debug-info" style="font-size: 12px; color: #666;">
+          ID вахты: {{ selectedVakhtaForWorkers.id }} |
+          Загружено работников: {{ vakhtaWorkers.length }}
+        </p>
+      </div>
+
+      <!-- Список работников -->
+      <div class="workers-section">
+        <div class="section-header">
+          <h5>Список работников</h5>
+          <button
+            v-if="vakhtaWorkers.length > 0"
+            @click="removeAllWorkers"
+            :disabled="removingWorkers"
+            class="btn btn-danger btn-sm"
+          >
+            {{ removingWorkers ? 'Удаление...' : '❌ Снять всех' }}
+          </button>
+        </div>
+
+        <div v-if="loadingWorkers" class="loading-workers">
+          <p>Загрузка списка работников...</p>
+        </div>
+
+        <div v-else-if="vakhtaWorkers.length === 0" class="no-workers">
+          <p>😔 На этой вахте нет активных работников</p>
+          <div class="debug-actions">
+            <button @click="forceShowWorkers(selectedVakhtaForWorkers)" class="btn btn-warning btn-sm">
+              🔍 Принудительно найти работников
+            </button>
+            <button @click="closeVakhtaWorkersModal" class="btn btn-primary">
+              Закрыть
+            </button>
+          </div>
+        </div>
+
+        <div v-else class="workers-list">
+          <div
+            v-for="worker in vakhtaWorkers"
+            :key="worker.id"
+            class="worker-card"
+          >
+            <div class="worker-info">
+              <div class="worker-avatar">💪</div>
+              <div class="worker-details">
+                <strong>{{ worker.full_name }}</strong>
+                <div class="worker-contacts">
+                  <span>📱 {{ worker.phone }}</span>
+                  <span>📧 {{ worker.email }}</span>
+                </div>
+                <div class="worker-meta">
+                  <small>Записан: {{ formatDate(worker.start_date) }}</small>
+                  <small>ID: {{ worker.borov_id }}</small>
+                </div>
+              </div>
+            </div>
+            <div class="worker-actions">
+              <button
+                @click="viewBorovProfileFromWorker(worker)"
+                class="btn btn-outline btn-sm"
+                title="Просмотреть профиль"
+              >
+                👁️ Профиль
+              </button>
+              <button
+                @click="removeWorker(worker)"
+                :disabled="removingWorkers"
+                class="btn btn-danger btn-sm"
+                title="Снять с вахты"
+              >
+                🗑️ Снять
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
         <!-- Activity Logs -->
         <div v-if="activeTab === 'activity'" class="tab-pane">
@@ -677,6 +992,244 @@
 </template>
 
 <script setup lang="ts">
+// Добавить в data
+
+// Добавить в data
+const showVakhtaWorkersModal = ref(false)
+const selectedVakhtaForWorkers = ref(null)
+const vakhtaWorkers = ref([])
+const loadingWorkers = ref(false)
+const removingWorkers = ref(false)
+
+const manageVakhtaWorkers = async (vakhta) => {
+  try {
+    console.log('🔄 Managing workers for vakhta:', {
+      id: vakhta.id,
+      title: vakhta.title,
+      current_workers: vakhta.current_workers
+    });
+
+    selectedVakhtaForWorkers.value = vakhta
+    showVakhtaWorkersModal.value = true
+    loadingWorkers.value = true
+    vakhtaWorkers.value = []
+
+    // Добавим таймаут для отладки
+    console.log('📡 Making API request to:', `http://localhost:3001/api/admin/vakhtas/${vakhta.id}/workers`);
+
+    const response = await $fetch(`http://localhost:3001/api/admin/vakhtas/${vakhta.id}/workers`, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+
+    console.log('✅ API Response:', response);
+    vakhtaWorkers.value = response
+
+  } catch (error) {
+    console.error('❌ Error loading vakhta workers:', error)
+    console.error('❌ Error details:', error.data)
+    showNotification('Ошибка', 'Не удалось загрузить список работников', 'error')
+    closeVakhtaWorkersModal()
+  } finally {
+    loadingWorkers.value = false
+  }
+}
+
+const closeVakhtaWorkersModal = () => {
+  showVakhtaWorkersModal.value = false
+  selectedVakhtaForWorkers.value = null
+  vakhtaWorkers.value = []
+  loadingWorkers.value = false
+  removingWorkers.value = false
+}
+
+const removeAllWorkers = async () => {
+  if (!selectedVakhtaForWorkers.value) return
+
+  try {
+    removingWorkers.value = true
+
+    const response = await $fetch(
+      `http://localhost:3001/api/admin/vakhtas/${selectedVakhtaForWorkers.value.id}/workers`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      }
+    )
+
+    showNotification(
+      'Успех',
+      `Снято ${response.removed_count} работников с вахты`,
+      'success'
+    )
+
+    // Обновляем список работников
+    await manageVakhtaWorkers(selectedVakhtaForWorkers.value)
+
+  } catch (error) {
+    console.error('Error removing all workers:', error)
+    showNotification('Ошибка', 'Не удалось снять работников', 'error')
+  } finally {
+    removingWorkers.value = false
+  }
+}
+
+const removeWorker = async (worker) => {
+  if (!selectedVakhtaForWorkers.value) return
+
+  try {
+    removingWorkers.value = true
+
+    await $fetch(
+      `http://localhost:3001/api/admin/vakhtas/${selectedVakhtaForWorkers.value.id}/workers/${worker.borov_id}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      }
+    )
+
+    showNotification(
+      'Успех',
+      `Работник ${worker.full_name} снят с вахты`,
+      'success'
+    )
+
+    // Обновляем список работников
+    await manageVakhtaWorkers(selectedVakhtaForWorkers.value)
+
+  } catch (error) {
+    console.error('Error removing worker:', error)
+    showNotification('Ошибка', 'Не удалось снять работника', 'error')
+  } finally {
+    removingWorkers.value = false
+  }
+}
+
+const forceDeleteVakhta = async (vakhta) => {
+  if (!confirm(`ОПАСНО! Вы уверены, что хотите принудительно удалить вахту "${vakhta.title}"? Это может повредить данные.`)) {
+    return;
+  }
+
+  try {
+    const response = await $fetch(
+      `http://localhost:3001/api/admin/vakhtas/${vakhta.id}/force-delete`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      }
+    );
+
+    showNotification('Успех', 'Вахта принудительно удалена', 'success');
+    await refreshData();
+  } catch (error) {
+    console.error('Force delete vakhta error:', error);
+    showNotification('Ошибка', 'Не удалось удалить вахту', 'error');
+  }
+}
+
+const deleteVakhtaAfterCleanup = async () => {
+  if (!selectedVakhtaForWorkers.value) return
+
+  try {
+    await $fetch(
+      `http://localhost:3001/api/admin/vakhtas/${selectedVakhtaForWorkers.value.id}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      }
+    )
+
+    showNotification(
+      'Успех',
+      `Вахта "${selectedVakhtaForWorkers.value.title}" удалена`,
+      'success'
+    )
+
+    closeVakhtaWorkersModal()
+    await refreshData()
+
+  } catch (error) {
+    console.error('Error deleting vakhta after cleanup:', error)
+    showNotification('Ошибка', 'Не удалось удалить вахту', 'error')
+  }
+}
+
+const viewBorovProfileFromWorker = (worker) => {
+  // Используем существующий метод просмотра профиля
+  viewBorovProfile({
+    id: worker.borov_id,
+    full_name: worker.full_name,
+    email: worker.email,
+    phone: worker.phone
+  })
+}
+
+// Универсальный метод снятия всех работников с вахты
+const universalRemoveWorkers = async (vakhta) => {
+  if (!confirm(`Принудительно снять ВСЕХ работников с вахты "${vakhta.title}"? Это действие нельзя отменить.`)) {
+    return;
+  }
+
+  try {
+    const response = await $fetch(`http://localhost:3001/api/admin/vakhtas/${vakhta.id}/workers`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    });
+
+    showNotification('Успех', `Снято ${response.removed_count} работников`, 'success');
+    await refreshData();
+    closeVakhtaWorkersModal();
+
+  } catch (error) {
+    console.error('Universal remove workers error:', error);
+    showNotification('Ошибка', 'Не удалось снять работников', 'error');
+  }
+}
+const showBorovProfileModal = ref(false)
+const selectedBorov = ref(null)
+const loadingBorovProfile = ref(false)
+
+const viewBorovProfile = async (borov) => {
+  try {
+    loadingBorovProfile.value = true
+    selectedBorov.value = null
+    showBorovProfileModal.value = true
+
+    console.log('Loading profile for borov:', borov.id)
+
+    const response = await $fetch(`http://localhost:3001/api/admin/borovs/${borov.id}/profile`, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+
+    selectedBorov.value = response
+    console.log('Profile loaded successfully')
+  } catch (error) {
+    console.error('Error loading borov profile:', error)
+    console.error('Error details:', error.data)
+    showNotification('Ошибка', 'Не удалось загрузить профиль борова', 'error')
+    closeBorovProfileModal()
+  } finally {
+    loadingBorovProfile.value = false
+  }
+}
+
+const closeBorovProfileModal = () => {
+  showBorovProfileModal.value = false
+  selectedBorov.value = null
+}
 definePageMeta({
   middleware: 'auth'
 })
@@ -784,7 +1337,7 @@ const getTabCount = (tabId: string) => {
   }
 }
 
-// Methods - Функции для удаления
+// В методе openDeleteModal добавить case для 'borov'
 const openDeleteModal = (type: string, data: any) => {
   const modalConfig = {
     slon: {
@@ -807,6 +1360,11 @@ const openDeleteModal = (type: string, data: any) => {
       title: `Удаление Промокода`,
       message: `Вы уверены, что хотите удалить промокод "${data.code}"?`,
       warning: data.borovs_count > 0 ? `Этот промокод использован ${data.borovs_count} раз. Удаление невозможно.` : ''
+    },
+    borov: {
+      title: `Удаление Борова`,
+      message: `Вы уверены, что хотите удалить борова "${data.full_name}"?`,
+      warning: data.current_vakhta ? `Боров сейчас работает на вахте. Сначала снимите его с работы.` : ''
     }
   }
 
@@ -836,6 +1394,7 @@ const closeDeleteModal = () => {
   }
 }
 
+// В методе confirmDelete добавить case для 'borov'
 const confirmDelete = async () => {
   try {
     deleting.value = true
@@ -861,9 +1420,13 @@ const confirmDelete = async () => {
         endpoint = `http://localhost:3001/api/admin/promocodes/${data.id}`
         successMessage = `Промокод "${data.code}" успешно удален`
         break
+      case 'borov':
+        endpoint = `http://localhost:3001/api/admin/borovs/${data.id}`
+        successMessage = `Боров "${data.full_name}" успешно удален`
+        break
     }
 
-    await $fetch(endpoint, {
+    const response = await $fetch(endpoint, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${authStore.token}`
@@ -876,7 +1439,17 @@ const confirmDelete = async () => {
 
   } catch (error: any) {
     console.error('Error deleting:', error)
-    showNotification('Ошибка удаления', error.data?.error || 'Не удалось удалить', 'error')
+
+    // Более информативные сообщения об ошибках
+    let errorMessage = error.data?.error || 'Не удалось удалить'
+
+    if (errorMessage.includes('foreign key constraint') || errorMessage.includes('violates foreign key')) {
+      errorMessage = 'Нельзя удалить - есть связанные данные'
+    } else if (errorMessage.includes('active work assignments')) {
+      errorMessage = 'Нельзя удалить борова с активными заданиями. Сначала снимите его с вахты/специальности.'
+    }
+
+    showNotification('Ошибка удаления', errorMessage, 'error')
   } finally {
     deleting.value = false
   }
@@ -1275,6 +1848,169 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+
+/* Добавить в стили */
+.vakhta-workers-modal {
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.vakhta-workers-content {
+  padding: 20px;
+}
+
+.vakhta-info-section {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #007bff;
+}
+
+.vakhta-info-section h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.location, .workers-count {
+  margin: 5px 0;
+  color: #666;
+}
+
+.workers-section {
+  margin-bottom: 25px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.section-header h5 {
+  margin: 0;
+  color: #333;
+}
+
+.loading-workers, .no-workers {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.workers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.worker-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.worker-card:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.worker-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.worker-avatar {
+  font-size: 2rem;
+}
+
+.worker-details strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.worker-contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.worker-contacts span {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.worker-meta small {
+  color: #888;
+}
+
+.worker-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions-section {
+  background: #d4edda;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #c3e6cb;
+}
+
+.success-message {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.success-message p {
+  margin: 5px 0;
+  color: #155724;
+}
+
+.hint {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .worker-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .worker-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}
 .admin-dashboard {
   min-height: 100vh;
   background: #f8f9fa;
@@ -2276,6 +3012,232 @@ onMounted(async () => {
 
   .delete-actions {
     flex-direction: column;
+  }
+}
+/* Добавить в стили */
+.borov-profile-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.borov-profile-content {
+  padding: 20px;
+}
+
+.profile-section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.profile-section:last-child {
+  border-bottom: none;
+}
+
+.profile-section h5 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.avatar-placeholder {
+  font-size: 3rem;
+}
+
+.user-info h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.user-meta {
+  margin: 2px 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #555;
+}
+
+.contact-icon {
+  font-size: 1.1rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 15px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.current-work {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.work-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.work-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.work-details strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.work-details p {
+  margin: 0 0 4px 0;
+  color: #666;
+}
+
+.work-details small {
+  color: #888;
+}
+
+.profile-field {
+  margin-bottom: 15px;
+}
+
+.profile-field label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.profile-field p {
+  margin: 0;
+  color: #555;
+  line-height: 1.4;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background: #e9ecef;
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.detail-item label {
+  font-weight: 500;
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.status-indicator {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-indicator.yes {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-indicator.no {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.no-profile {
+  text-align: center;
+  padding: 30px;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .profile-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
