@@ -3,7 +3,7 @@ export const useApi = () => {
 const authStore = useAuthStore()
 
 return $fetch.create({
-    baseURL: 'http://localhost:3001/api',
+    baseURL: 'https://borovy-backend4.vercel.app/api',
     headers: {
       'Content-Type': 'application/json',
     },
