@@ -354,8 +354,7 @@ const loadDashboardData = async () => {
 
 const loadRecommendations = async () => {
   try {
-   const response = await apiFetch('/vakhta')
-    })
+    const response = await apiFetch('/vakhta')
 
     const allSpecialties = []
     response.forEach(enterprise => {
