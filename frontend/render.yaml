@@ -7,5 +7,5 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NUXT_PUBLIC_API_BASE
+      - key: NUXT_PUBLIC_API_BASE_URL
         value: https://borovy-backend4.vercel.app/api
