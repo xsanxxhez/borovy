@@ -44,7 +44,7 @@ app.use(cors({
       'http://localhost:3001',
       'https://borovy-frontend.vercel.app',
       'https://borovy.onrender.com',
-      'https://borovy-backend4.vercel.app'
+      'https://borovy-backend.onrender.com'
     ];
 
     // Разрешаем все поддомены vercel.app и onrender.com

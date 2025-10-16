@@ -1,5 +1,5 @@
 {
-  "name": "borovy-frontend",
+  "name": "borovy",
   "private": true,
   "type": "module",
   "scripts": {

@@ -7,7 +7,7 @@ export default defineNuxtConfig({
     // Private keys (only available on server)
     // Public keys (exposed to client)
     public: {
-      apiBase: 'https://borovy-backend4.vercel.app/api'
+      apiBase: 'https://borovy-backend.onrender.com/api'
     }
   },
 

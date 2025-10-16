@@ -1,7 +1,7 @@
 export const useApi = () => {
 const authStore = useAuthStore()
 
-const baseURL = 'https://borovy-backend4.vercel.app/api'
+const baseURL = 'https://borovy-backend.onrender.com/api'
 
 const apiFetch = $fetch.create({
 baseURL,
