@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: borovy-frontend
+    env: node
+    buildCommand: yarn install && yarn build
+    startCommand: yarn start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NUXT_PUBLIC_API_BASE
+        value: https://borovy-backend4.vercel.app/api
