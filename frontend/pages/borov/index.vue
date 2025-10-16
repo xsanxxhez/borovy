@@ -324,11 +324,9 @@ const recentActivity = ref([])
 const recommendations = ref([])
 const showRipple = ref(false)
 
-// Загрузка данных
 const loadDashboardData = async () => {
   try {
     const workResponse = await apiFetch('/borov/current-work')
-    })
     currentWork.value = workResponse
 
     const statsResponse = await apiFetch('/borov/stats')
