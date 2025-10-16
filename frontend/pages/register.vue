@@ -384,6 +384,9 @@
 </template>
 
 <script setup lang="ts">
+
+const authStore = useAuthStore()
+
 definePageMeta({
   layout: false
 })
@@ -542,33 +545,33 @@ const handleRegister = async () => {
   }
 
   try {
-    loading.value = true
-    error.value = ''
+      loading.value = true
+      error.value = ''
 
-    // Очищаем телефон от форматирования
-    const cleanPhone = form.phone.replace(/\D/g, '');
+      // Очищаем телефон от форматирования
+      const cleanPhone = form.phone.replace(/\D/g, '');
 
-    console.log('🔄 Registration attempt:', {
-      username: form.email,
-      email: form.email,
-      name: form.full_name,        // ← ИСПРАВЛЕНО: name вместо full_name
-      phone: cleanPhone,
-      promo_code: form.promo_code
-    })
-
-    // Правильные поля для бэкенда
-    const response = await apiFetch('/auth/register', {
-      method: 'POST',
-      body: {
-        username: form.email,        // ← используем email как username
+      console.log('🔄 Registration attempt:', {
+        username: form.email,
         email: form.email,
-        password: form.password,
-        promo_code: form.promo_code,
         name: form.full_name,        // ← ИСПРАВЛЕНО: name вместо full_name
-        phone: cleanPhone            // ← очищенный телефон
-        // birth_date убрали - его нет в бэкенде
-      }
-    })
+        phone: cleanPhone,
+        promo_code: form.promo_code
+      })
+
+      // Правильные поля для бэкенда
+      const response = await apiFetch('/auth/register', {
+        method: 'POST',
+        body: {
+          username: form.email,        // ← используем email как username
+          email: form.email,
+          password: form.password,
+          promo_code: form.promo_code,
+          name: form.full_name,        // ← ИСПРАВЛЕНО: name вместо full_name
+          phone: cleanPhone            // ← очищенный телефон
+          // birth_date убрали - его нет в бэкенде
+        }
+      })
 
     console.log('✅ Registration successful:', response)
 
