@@ -1,14 +1,7 @@
--- Удаляем существующие таблицы если есть
-DROP TABLE IF EXISTS borov_vakhta_history CASCADE;
-DROP TABLE IF EXISTS specialties CASCADE;
-DROP TABLE IF EXISTS vakhtas CASCADE;
-DROP TABLE IF EXISTS borovs CASCADE;
-DROP TABLE IF EXISTS slons CASCADE;
-DROP TABLE IF EXISTS promocodes CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+-- ==================== БАЗА ДАННЫХ BOROVY ====================
 
 -- Таблица пользователей
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -19,7 +12,7 @@ CREATE TABLE users (
 );
 
 -- Таблица слонов
-CREATE TABLE slons (
+CREATE TABLE IF NOT EXISTS slons (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
     name VARCHAR(100) NOT NULL,
@@ -27,8 +20,8 @@ CREATE TABLE slons (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Табора промокодов
-CREATE TABLE promocodes (
+-- Таблица промокодов
+CREATE TABLE IF NOT EXISTS promocodes (
     id SERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
     slon_id INTEGER REFERENCES slons(id),
@@ -39,7 +32,7 @@ CREATE TABLE promocodes (
 );
 
 -- Таблица боровов
-CREATE TABLE borovs (
+CREATE TABLE IF NOT EXISTS borovs (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
     slon_id INTEGER REFERENCES slons(id),
@@ -52,7 +45,7 @@ CREATE TABLE borovs (
 );
 
 -- Таблица вахт
-CREATE TABLE vakhtas (
+CREATE TABLE IF NOT EXISTS vakhtas (
     id SERIAL PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     description TEXT,
@@ -66,7 +59,7 @@ CREATE TABLE vakhtas (
 );
 
 -- Таблица специальностей
-CREATE TABLE specialties (
+CREATE TABLE IF NOT EXISTS specialties (
     id SERIAL PRIMARY KEY,
     vakhta_id INTEGER REFERENCES vakhtas(id),
     title VARCHAR(100) NOT NULL,
@@ -79,7 +72,7 @@ CREATE TABLE specialties (
 );
 
 -- Таблица истории работы боровов
-CREATE TABLE borov_vakhta_history (
+CREATE TABLE IF NOT EXISTS borov_vakhta_history (
     id SERIAL PRIMARY KEY,
     borov_id INTEGER REFERENCES borovs(id),
     vakhta_id INTEGER REFERENCES vakhtas(id),
@@ -91,20 +84,8 @@ CREATE TABLE borov_vakhta_history (
 );
 
 -- Индексы для ускорения запросов
-CREATE INDEX idx_borovs_user_id ON borovs(user_id);
-CREATE INDEX idx_borovs_slon_id ON borovs(slon_id);
-CREATE INDEX idx_vakhtas_dates ON vakhtas(start_date, end_date);
-CREATE INDEX idx_specialties_vakhta_id ON specialties(vakhta_id);
-CREATE INDEX idx_borov_history ON borov_vakhta_history(borov_id, vakhta_id);
-
--- Вставляем тестовые данные
-INSERT INTO users (username, password_hash, email, role) VALUES
-('admin', '$2b$10$examplehash', 'admin@borovy.ru', 'admin'),
-('slon1', '$2b$10$examplehash', 'slon1@borovy.ru', 'slon'),
-('borov1', '$2b$10$examplehash', 'borov1@borovy.ru', 'borov');
-
-INSERT INTO slons (user_id, name, contact_info) VALUES
-(2, 'Иван Слоноров', 'ivan@example.com');
-
-INSERT INTO borovs (user_id, slon_id, name, phone) VALUES
-(3, 1, 'Петр Боровов', '+79991234567');
+CREATE INDEX IF NOT EXISTS idx_borovs_user_id ON borovs(user_id);
+CREATE INDEX IF NOT EXISTS idx_borovs_slon_id ON borovs(slon_id);
+CREATE INDEX IF NOT EXISTS idx_vakhtas_dates ON vakhtas(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_specialties_vakhta_id ON specialties(vakhta_id);
+CREATE INDEX IF NOT EXISTS idx_borov_history ON borov_vakhta_history(borov_id, vakhta_id);
