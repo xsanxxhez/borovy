@@ -551,12 +551,12 @@ const handleRegister = async () => {
     console.log('🔄 Registration attempt:', {
       username: form.email,
       email: form.email,
-      name: form.full_name,
+      name: form.full_name,        // ← ИСПРАВЛЕНО: name вместо full_name
       phone: cleanPhone,
       promo_code: form.promo_code
     })
 
-    // ИСПРАВЛЕНО: правильные поля для бэкенда
+    // Правильные поля для бэкенда
     const response = await apiFetch('/auth/register', {
       method: 'POST',
       body: {
@@ -564,13 +564,16 @@ const handleRegister = async () => {
         email: form.email,
         password: form.password,
         promo_code: form.promo_code,
-        name: form.full_name,        // ← не full_name
+        name: form.full_name,        // ← ИСПРАВЛЕНО: name вместо full_name
         phone: cleanPhone            // ← очищенный телефон
         // birth_date убрали - его нет в бэкенде
       }
     })
 
     console.log('✅ Registration successful:', response)
+
+    // Автоматически логиним пользователя после регистрации
+    authStore.setAuth(response.token, response.user)
 
     message.value = 'Регистрация успешна! Вы будете автоматически вошли в систему.'
 
@@ -594,9 +597,6 @@ const handleRegister = async () => {
   } finally {
     loading.value = false
   }
-}
-const cleanPhoneNumber = (phone) => {
-  return phone.replace(/\D/g, '');
 }
 
 // Инициализация частиц
