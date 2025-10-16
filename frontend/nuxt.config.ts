@@ -8,15 +8,12 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_URL || 'https://borovy-backend4.vercel.app/api'
+      apiBase: 'https://borovy-backend4.vercel.app/api'
     }
   },
   modules: [
     '@pinia/nuxt'
   ],
-  imports: {
-    dirs: ['./stores']
-  },
   app: {
     head: {
       title: 'Borovy App',
@@ -25,5 +22,9 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' }
       ]
     }
+  },
+  // Добавляем автоподгрузку композаблов
+  imports: {
+    dirs: ['composables']
   }
 })
