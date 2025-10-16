@@ -1,39 +1,32 @@
+// composables/useApi.ts
 export const useApi = () => {
 const authStore = useAuthStore()
 
-// Прямой URL к вашему бэкенду на Vercel
 const baseURL = 'https://borovy-backend4.vercel.app/api'
 
-const apiFetch = async (url: string, options: any = {}) => {
-const headers = {
+const apiFetch = $fetch.create({
+baseURL,
+credentials: 'include',
+headers: {
 'Content-Type': 'application/json',
-...options.headers,
-}
-
-// Добавляем токен авторизации если есть
-if (authStore.token) {
-      headers['Authorization'] = `Bearer ${authStore.token}`
-    }
-
-    try {
-      const response = await $fetch(url, {
-        baseURL,
-        ...options,
-        headers,
-        credentials: 'include'
-      })
-      return response
-    } catch (error: any) {
-      console.error('API Error:', error)
-
+},
+onRequest({ options }) {
+      // Добавляем токен авторизации если есть
+      if (authStore.token) {
+        options.headers = {
+          ...options.headers,
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      }
+    },
+    onResponseError({ response }) {
       // Обработка ошибок авторизации
-      if (error?.status === 401) {
+      if (response.status === 401) {
         authStore.logout()
         navigateTo('/login')
       }
-      throw error
     }
-  }
+  })
 
   return {
     apiFetch,

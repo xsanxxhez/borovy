@@ -220,17 +220,25 @@ const fillTestData = (type: 'admin' | 'slon') => {
   })
 }
 
+// в login.vue (заменить текущий handleLogin)
 const handleLogin = async () => {
   loading.value = true
   error.value = ''
 
   try {
-   const response = await $fetch('/auth/login', {
+    // Используем apiFetch вместо прямого $fetch
+    const response = await apiFetch('/auth/login', {
       method: 'POST',
       body: form
     })
 
     console.log('Login response:', response)
+
+    // Добавляем проверку на существование user
+    if (!response.user) {
+      throw new Error('Некорректный ответ от сервера: отсутствуют данные пользователя')
+    }
+
     console.log('User role:', response.user.role)
 
     authStore.setAuth(response.token, response.user)
@@ -254,7 +262,7 @@ const handleLogin = async () => {
       }
     }, 1000)
   } catch (err: any) {
-    error.value = err.data?.error || 'Ошибка входа'
+    error.value = err.data?.error || err.message || 'Ошибка входа'
     console.error('Login error:', err)
 
     // Анимация ошибки

@@ -1,14 +1,11 @@
+// nuxt.config.ts
 export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
 
-  // Добавьте это для продакшена
-  nitro: {
-    preset: 'node-server',
-    serveStatic: true
-  },
-
   runtimeConfig: {
+    // Private keys (only available on server)
+    // Public keys (exposed to client)
     public: {
       apiBase: 'https://borovy-backend4.vercel.app/api'
     }
@@ -30,5 +27,10 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' }
       ]
     }
+  },
+
+  // Добавьте для продакшена
+  nitro: {
+    preset: 'node-server'
   }
 })

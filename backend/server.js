@@ -44,7 +44,9 @@ app.use(cors({
       'http://localhost:3000',
       'http://localhost:3001',
       'https://borovy-frontend.vercel.app',
-      'https://*.vercel.app'
+      'https://*.vercel.app',
+      'https://borovy.onrender.com',
+      'https://borovy-backend4.vercel.app'
     ];
 
     if (allowedOrigins.indexOf(origin) !== -1) {
