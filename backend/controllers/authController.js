@@ -4,9 +4,12 @@ const { pool } = require('../config/database');
 
 const login = async (req, res) => {
   try {
+    console.log('🔐 Login attempt for:', req.body.username);
+
     const { username, password } = req.body;
 
     if (!username || !password) {
+      console.log('❌ Missing credentials');
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
@@ -15,6 +18,7 @@ const login = async (req, res) => {
 
     // Сначала проверяем админа (специальная логика для админа)
     if (username === 'admin') {
+      console.log('🔍 Checking admin...');
       const adminResult = await pool.query(
         'SELECT * FROM slons WHERE username = $1',
         [username]
@@ -22,11 +26,13 @@ const login = async (req, res) => {
       if (adminResult.rows.length > 0) {
         user = adminResult.rows[0];
         role = 'admin';
+        console.log('✅ Admin found');
       }
     }
 
     // Если не админ, проверяем обычных слонов
     if (!user) {
+      console.log('🔍 Checking slon...');
       const slonResult = await pool.query(
         'SELECT * FROM slons WHERE username = $1 AND is_active = true',
         [username]
@@ -34,11 +40,13 @@ const login = async (req, res) => {
       if (slonResult.rows.length > 0) {
         user = slonResult.rows[0];
         role = 'slon';
+        console.log('✅ Slon found');
       }
     }
 
     // Если не слон, проверяем боровов по email
     if (!user) {
+      console.log('🔍 Checking borov by email...');
       const borovResult = await pool.query(
         'SELECT * FROM borovs WHERE email = $1',
         [username]
@@ -46,20 +54,25 @@ const login = async (req, res) => {
       if (borovResult.rows.length > 0) {
         user = borovResult.rows[0];
         role = 'borov';
+        console.log('✅ Borov found');
       }
     }
 
     if (!user) {
+      console.log('❌ User not found');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
+    console.log('🔑 Verifying password...');
     const isValidPassword = await User.verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
+      console.log('❌ Invalid password');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Generate token
+    console.log('🎫 Generating token...');
     const token = generateToken({
       id: user.id,
       username: user.username || user.email,
@@ -67,7 +80,7 @@ const login = async (req, res) => {
       display_name: user.display_name || user.full_name
     });
 
-    res.json({
+    const responseData = {
       token,
       user: {
         id: user.id,
@@ -75,10 +88,14 @@ const login = async (req, res) => {
         role: role,
         display_name: user.display_name || user.full_name
       }
-    });
+    };
+
+    console.log('✅ Login successful for:', responseData.user.username, 'role:', responseData.user.role);
+
+    res.json(responseData);
 
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

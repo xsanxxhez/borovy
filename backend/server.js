@@ -32,11 +32,10 @@ console.log('POSTGRES_URL:', process.env.POSTGRES_URL ? '✅ LOADED' : '❌ NOT 
 console.log('DB_HOST:', process.env.DB_HOST || 'localhost');
 console.log('================================');
 
-// Middleware
-app.use(helmet());
+// ОБНОВЛЕННЫЙ CORS middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Разрешаем запросы без origin (например, из мобильных приложений)
+    // Разрешаем запросы без origin (например, из мобильных приложений, серверные запросы)
     if (!origin) return callback(null, true);
 
     // Список разрешенных доменов
@@ -44,12 +43,21 @@ app.use(cors({
       'http://localhost:3000',
       'http://localhost:3001',
       'https://borovy-frontend.vercel.app',
-      'https://*.vercel.app',
       'https://borovy.onrender.com',
       'https://borovy-backend4.vercel.app'
     ];
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Разрешаем все поддомены vercel.app и onrender.com
+    const allowedPatterns = [
+      /\.vercel\.app$/,
+      /\.onrender\.com$/
+    ];
+
+    // Проверяем точное совпадение или паттерн
+    const isAllowed = allowedOrigins.includes(origin) ||
+                     allowedPatterns.some(pattern => pattern.test(origin));
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       console.log('🚫 CORS blocked for origin:', origin);
@@ -57,11 +65,20 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Явная обработка OPTIONS запросов для всех маршрутов
+app.options('*', cors());
+
+// Остальные middleware
+app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -118,6 +135,14 @@ app.use('*', (req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error('❌ Server error:', err.stack);
+
+  // CORS errors
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      error: 'CORS policy: Origin not allowed'
+    });
+  }
+
   res.status(500).json({
     error: 'Something went wrong!',
     ...(process.env.NODE_ENV === 'development' && { details: err.message })
