@@ -8,17 +8,18 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "start": "node .output/server/index.mjs"
+    "start": "nuxt start"
   },
-
   "dependencies": {
     "@pinia/nuxt": "^0.5.1",
     "nuxt": "^3.10.0",
     "pinia": "^2.1.7",
-    "vue": "^3.3.11",
-    "vue-router": "^4.2.5"
+    "vue": "^3.3.11"
   },
   "devDependencies": {
     "vue-tsc": "^2.2.12"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
