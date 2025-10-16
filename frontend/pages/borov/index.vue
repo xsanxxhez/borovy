@@ -314,7 +314,7 @@
 </template>
 
 <script setup lang="ts">
-const { apiFetch } = useApi(
+const { apiFetch } = useApi()
 const authStore = useAuthStore()
 
 // Состояния
