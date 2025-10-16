@@ -1,5 +1,5 @@
 const express = require('express');
-const { login, getProfile } = require('../controllers/authController');
+const { login, getProfile, register } = require('../controllers/authController'); // ← добавил register
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -13,8 +13,17 @@ router.options('/login', (req, res) => {
   res.sendStatus(204);
 });
 
+// Явная обработка OPTIONS для register
+router.options('/register', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(204);
+});
+
 router.post('/login', login);
+router.post('/register', register); // ← добавил этот роут
 router.get('/profile', authenticate, getProfile);
-router.post('/register', register);
 
 module.exports = router;
