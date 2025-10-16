@@ -603,6 +603,9 @@
 </template>
 
 <script setup lang="ts">
+
+const { apiFetch } = useApi()
+
 definePageMeta({
   middleware: 'auth'
 })
@@ -749,9 +752,8 @@ const hasChanges = computed(() => {
 const loadProfile = async () => {
   try {
     loading.value = true
-    const data = await $fetch('http://localhost:3001/api/borov/profile', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const data = await apiFetch('/borov/profile')
+
     profile.value = data
 
     if (data.profile) {
@@ -852,14 +854,10 @@ const saveProfile = async () => {
       const formData = new FormData();
       formData.append('avatar', avatarFile.value);
 
-      const avatarResponse = await $fetch('http://localhost:3001/api/borov/avatar', {
+      const avatarResponse = await apiFetch('/borov/avatar', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authStore.token}`,
-          // Не устанавливаем Content-Type, браузер сделает это сам
-        },
         body: formData
-      });
+      })
 
       finalAvatarUrl = avatarResponse.avatar_url;
     }
@@ -878,9 +876,8 @@ const saveProfile = async () => {
     }
 
     // Обновляем профиль
-    await $fetch('http://localhost:3001/api/borov/profile', {
+    await apiFetch('/borov/profile', {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${authStore.token}` },
       body: payload
     })
 
@@ -948,14 +945,10 @@ const uploadAvatar = async (file) => {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const response = await $fetch('http://localhost:3001/api/borov/avatar', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        // Не устанавливаем Content-Type, браузер сделает это сам с boundary
-      },
+    await apiFetch('/borov/avatar', {
+      method: 'POST'
       body: formData
-    });
+    })
 
     return response.avatar_url;
   } catch (error) {
@@ -967,10 +960,9 @@ const uploadAvatar = async (file) => {
 // Добавьте этот метод в секцию methods вашего Vue компонента
 const deleteAvatar = async () => {
   try {
-    await $fetch('http://localhost:3001/api/borov/avatar', {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    });
+    await apiFetch('/borov/avatar', {
+      method: 'DELETE'
+    })
 
     // Обновляем локальные данные
     profile.value.avatar_url = '';

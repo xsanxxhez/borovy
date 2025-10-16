@@ -276,6 +276,9 @@
 </template>
 
 <script setup lang="ts">
+
+const { apiFetch } = useApi()
+
 interface Profile {
   full_name: string
   email: string
@@ -347,7 +350,7 @@ const profileData = computed(() => profile.value.profile)
 // Загрузка профиля
 const loadProfile = async () => {
   try {
-    const data = await $fetch('/api/borov/profile')
+    const data = await apiFetch('/borov/profile')
     profile.value = data
 
     if (data.profile) {
@@ -398,7 +401,7 @@ const saveProfile = async () => {
       languages: languagesObj
     }
 
-    await $fetch('/api/borov/profile', {
+    await apiFetch('/borov/profile', {
       method: 'PUT',
       body: payload
     })

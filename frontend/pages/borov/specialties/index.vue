@@ -438,6 +438,7 @@
 </template>
 
 <script setup lang="ts">
+const { apiFetch } = useApi()
 const authStore = useAuthStore()
 const router = useRouter()
 
@@ -554,13 +555,11 @@ const loadSpecialties = async () => {
 
     if (authStore.isAuthenticated) {
       // Загрузка для авторизованных пользователей
-      const response = await $fetch('http://localhost:3001/api/vakhta', {
-        headers: { 'Authorization': `Bearer ${authStore.token}` }
-      });
+      const response = await apiFetch('/vakhta')
       processSpecialties(response);
     } else {
       // Загрузка для гостей - используем публичный эндпоинт
-      const response = await $fetch('http://localhost:3001/api/public/specialties');
+     const response = await apiFetch('/public/specialties')
       processPublicSpecialties(response); // Новая функция для обработки публичных данных
     }
   } catch (error) {
@@ -568,7 +567,7 @@ const loadSpecialties = async () => {
 
     // Fallback: попробуем получить данные через vakhta роут
     try {
-      const response = await $fetch('http://localhost:3001/api/vakhta');
+      const response = await apiFetch('/vakhta')
       processSpecialties(response);
     } catch (fallbackError) {
       console.error('Fallback also failed:', fallbackError);
@@ -627,9 +626,7 @@ const checkActiveSpecialty = async () => {
   if (!authStore.isAuthenticated) return
 
   try {
-    const response = await $fetch('http://localhost:3001/api/borov/specialties/my', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const response = await apiFetch('/borov/specialties/my')
     hasActiveSpecialty.value = response.some((s: any) => s.status === 'active')
   } catch (error) {
     console.error('Error checking active specialty:', error)
@@ -645,9 +642,8 @@ const joinSpecialty = async (specialtyId: number) => {
   try {
     joiningSpecialty.value = specialtyId
 
-    await $fetch('http://localhost:3001/api/borov/specialties/join', {
+    await apiFetch('/borov/specialties/join', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${authStore.token}` },
       body: { specialty_id: specialtyId }
     })
 

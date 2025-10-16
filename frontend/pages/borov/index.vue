@@ -314,6 +314,7 @@
 </template>
 
 <script setup lang="ts">
+const { apiFetch } = useApi(
 const authStore = useAuthStore()
 
 // Состояния
@@ -326,19 +327,14 @@ const showRipple = ref(false)
 // Загрузка данных
 const loadDashboardData = async () => {
   try {
-    const workResponse = await $fetch('http://localhost:3001/api/borov/current-work', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    const workResponse = await apiFetch('/borov/current-work')
     })
     currentWork.value = workResponse
 
-    const statsResponse = await $fetch('http://localhost:3001/api/borov/stats', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const statsResponse = await apiFetch('/borov/stats')
     stats.value = statsResponse
 
-    const specialtiesResponse = await $fetch('http://localhost:3001/api/borov/specialties/my', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const specialtiesResponse = await apiFetch('/borov/specialties/my')
 
     recentActivity.value = specialtiesResponse
       .slice(0, 4)
@@ -360,8 +356,7 @@ const loadDashboardData = async () => {
 
 const loadRecommendations = async () => {
   try {
-    const response = await $fetch('http://localhost:3001/api/vakhta', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
+   const response = await apiFetch('/vakhta')
     })
 
     const allSpecialties = []
@@ -472,9 +467,8 @@ const leaveWork = async () => {
     }
 
     if (endpoint) {
-      await $fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${authStore.token}` }
+      await apiFetch(endpoint.replace('http://localhost:3001/api', ''), {
+        method: 'POST'
       })
 
       await loadDashboardData()

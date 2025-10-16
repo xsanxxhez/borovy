@@ -449,6 +449,7 @@
 </template>
 
 <script setup lang="ts">
+const { apiFetch } = useApi(
 const authStore = useAuthStore()
 const route = useRoute()
 
@@ -469,10 +470,7 @@ const loadSpecialty = async () => {
 
     if (authStore.isAuthenticated) {
       // Загрузка для авторизованного пользователя
-      const response = await $fetch('http://localhost:3001/api/vakhta', {
-        headers: { 'Authorization': `Bearer ${authStore.token}` }
-      })
-
+      const response = await apiFetch('/vakhta')
       // Ищем специальность по ID во всех предприятиях
       let foundSpecialty = null
       for (const enterprise of response) {
@@ -500,7 +498,7 @@ const loadSpecialty = async () => {
     } else {
       // Загрузка для гостя - используем публичный эндпоинт
       try {
-        const response = await $fetch(`http://localhost:3001/api/public/specialties/${specialtyId}`)
+        const response = await apiFetch(`/public/specialties/${specialtyId}`)
         specialty.value = response
       } catch (publicError) {
         console.error('Public endpoint failed, trying fallback:', publicError)
@@ -520,7 +518,7 @@ const loadSpecialty = async () => {
 // Fallback метод для загрузки специальности
 const loadSpecialtyFallback = async (specialtyId: string) => {
   try {
-    const response = await $fetch('http://localhost:3001/api/vakhta')
+    const response = await apiFetch('/vakhta')
 
     let foundSpecialty = null
     for (const enterprise of response) {
@@ -556,9 +554,8 @@ const checkActiveSpecialty = async () => {
   if (!authStore.isAuthenticated) return
 
   try {
-    const response = await $fetch('http://localhost:3001/api/borov/specialties/my', {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const response = await apiFetch('/borov/specialties/my')
+
     hasActiveSpecialty.value = response.some((s: any) => s.status === 'active')
   } catch (error) {
     console.error('Error checking active specialty:', error)
@@ -575,9 +572,8 @@ const joinSpecialty = async () => {
   try {
     joining.value = true
 
-    await $fetch('http://localhost:3001/api/borov/specialties/join', {
+    await apiFetch('/borov/specialties/join', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${authStore.token}` },
       body: { specialty_id: specialty.value.id }
     })
 
