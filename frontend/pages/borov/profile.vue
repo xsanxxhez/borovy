@@ -946,7 +946,7 @@ const uploadAvatar = async (file) => {
     formData.append('avatar', file);
 
     await apiFetch('/borov/avatar', {
-      method: 'POST'
+      method: 'POST',
       body: formData
     })
 
