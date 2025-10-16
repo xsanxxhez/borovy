@@ -1,12 +1,21 @@
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
+// Функция для хеширования пароля
 const hashPassword = async (password) => {
-  const saltRounds = 12;
+  const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
 };
 
-const comparePassword = async (password, hash) => {
-  return await bcrypt.compare(password, hash);
+// Функция для проверки пароля
+const comparePassword = async (plainPassword, hashedPassword) => {
+  if (!hashedPassword) return false;
+
+  try {
+    return await bcrypt.compare(plainPassword, hashedPassword);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
+  }
 };
 
 module.exports = {

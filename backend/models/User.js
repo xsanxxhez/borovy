@@ -1,6 +1,6 @@
 const BaseModel = require('./BaseModel');
 const { hashPassword, comparePassword } = require('../utils/passwordHash');
-const { pool } = require('../config/database'); // Добавьте этот импорт
+const { pool } = require('../config/database');
 
 class User extends BaseModel {
   constructor() {
@@ -8,7 +8,6 @@ class User extends BaseModel {
   }
 
   async findByUsername(username) {
-    // Ищем в таблице users, а не slons
     const result = await pool.query(
       'SELECT * FROM users WHERE username = $1 OR email = $1',
       [username]
@@ -17,7 +16,6 @@ class User extends BaseModel {
   }
 
   async findByEmail(email) {
-    // Ищем в таблице users, а не borovs
     const result = await pool.query(
       'SELECT * FROM users WHERE email = $1',
       [email]
@@ -49,6 +47,16 @@ class User extends BaseModel {
 
   async verifyPassword(plainPassword, hashedPassword) {
     return await comparePassword(plainPassword, hashedPassword);
+  }
+
+  // Дополнительный метод для сброса паролей (на время отладки)
+  async resetPassword(username, newPassword) {
+    const hashedPassword = await hashPassword(newPassword);
+    const result = await pool.query(
+      'UPDATE users SET password_hash = $1 WHERE username = $2 RETURNING *',
+      [hashedPassword, username]
+    );
+    return result.rows[0];
   }
 }
 
