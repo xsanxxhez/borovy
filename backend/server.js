@@ -97,6 +97,36 @@ app.get('/', (req, res) => {
     version: '1.0.0'
   });
 });
+// Отладочные роуты
+app.get('/api/debug/urls', (req, res) => {
+  res.json({
+    frontend_url: process.env.FRONTEND_URL,
+    backend_url: 'https://borovy-backend.onrender.com',
+    node_env: process.env.NODE_ENV,
+    headers: {
+      origin: req.headers.origin,
+      host: req.headers.host,
+      'user-agent': req.headers['user-agent']
+    }
+  });
+});
+
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const users = await pool.query(`
+      SELECT username, role, LENGTH(password_hash) as hash_length
+      FROM users
+      ORDER BY username
+    `);
+
+    res.json({
+      users: users.rows,
+      total: users.rows.length
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Basic health check
 app.get('/api/health', (req, res) => {
