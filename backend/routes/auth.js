@@ -15,5 +15,6 @@ router.options('/login', (req, res) => {
 
 router.post('/login', login);
 router.get('/profile', authenticate, getProfile);
+router.post('/register', register);
 
 module.exports = router;

@@ -116,6 +116,113 @@ const login = async (req, res) => {
   }
 };
 
+const register = async (req, res) => {
+  try {
+    console.log('👤 Registration attempt:', req.body);
+
+    const { username, email, password, promo_code, name, phone } = req.body;
+
+    // Валидация
+    if (!username || !password || !promo_code || !name) {
+      return res.status(400).json({
+        error: 'Username, password, promo code and name are required'
+      });
+    }
+
+    // Проверяем, не занят ли username или email
+    const existingUser = await pool.query(
+      'SELECT * FROM users WHERE username = $1 OR email = $1',
+      [username]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({
+        error: 'Username or email already exists'
+      });
+    }
+
+    // Проверяем промокод
+    console.log('🔍 Checking promo code:', promo_code);
+    const promoResult = await pool.query(
+      `SELECT pc.*, s.id as slon_id, s.name as slon_name
+       FROM promocodes pc
+       LEFT JOIN slons s ON pc.slon_id = s.id
+       WHERE pc.code = $1 AND pc.is_used = false`,
+      [promo_code]
+    );
+
+    if (promoResult.rows.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid or already used promo code'
+      });
+    }
+
+    const promo = promoResult.rows[0];
+    console.log('✅ Valid promo code found, slon_id:', promo.slon_id);
+
+    // Создаем пользователя
+    const hashedPassword = await require('../utils/passwordHash').hashPassword(password);
+
+    const userResult = await pool.query(
+      `INSERT INTO users (username, email, password_hash, role, created_at)
+       VALUES ($1, $2, $3, 'borov', NOW())
+       RETURNING *`,
+      [username, email, hashedPassword]
+    );
+
+    const newUser = userResult.rows[0];
+    console.log('✅ User created with ID:', newUser.id);
+
+    // Создаем запись боровова
+    const borovResult = await pool.query(
+      `INSERT INTO borovs (user_id, slon_id, name, phone, promo_code_id, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       RETURNING *`,
+      [newUser.id, promo.slon_id, name, phone, promo.id]
+    );
+
+    // Помечаем промокод как использованный
+    await pool.query(
+      'UPDATE promocodes SET is_used = true, used_at = NOW() WHERE id = $1',
+      [promo.id]
+    );
+
+    const newBorov = borovResult.rows[0];
+    console.log('✅ Borov created with ID:', newBorov.id);
+
+    // Генерируем токен для автоматического входа
+    const token = generateToken({
+      id: newUser.id,
+      username: newUser.username,
+      role: 'borov',
+      display_name: name
+    });
+
+    const responseData = {
+      token,
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        role: 'borov',
+        display_name: name,
+        borov_id: newBorov.id,
+        phone: phone,
+        status: 'active',
+        promo_code: promo_code,
+        slon_name: promo.slon_name
+      }
+    };
+
+    console.log('🎉 Registration successful for:', username);
+    res.status(201).json(responseData);
+
+  } catch (error) {
+    console.error('❌ Registration error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 const getProfile = async (req, res) => {
   try {
     // Получаем основные данные пользователя
@@ -179,5 +286,6 @@ const getProfile = async (req, res) => {
 
 module.exports = {
   login,
+  register,
   getProfile
 };
