@@ -1,5 +1,6 @@
 const BaseModel = require('./BaseModel');
 const { hashPassword, comparePassword } = require('../utils/passwordHash');
+const { pool } = require('../config/database'); // Добавьте этот импорт
 
 class User extends BaseModel {
   constructor() {
@@ -7,16 +8,18 @@ class User extends BaseModel {
   }
 
   async findByUsername(username) {
-    const result = await this.pool.query(
-      'SELECT * FROM slons WHERE username = $1 AND is_active = true',
+    // Ищем в таблице users, а не slons
+    const result = await pool.query(
+      'SELECT * FROM users WHERE username = $1 OR email = $1',
       [username]
     );
     return result.rows[0] || null;
   }
 
   async findByEmail(email) {
-    const result = await this.pool.query(
-      'SELECT * FROM borovs WHERE email = $1',
+    // Ищем в таблице users, а не borovs
+    const result = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
       [email]
     );
     return result.rows[0] || null;
