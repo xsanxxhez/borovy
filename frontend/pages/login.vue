@@ -220,16 +220,17 @@ const fillTestData = (type: 'admin' | 'slon') => {
   })
 }
 
-// в login.vue (заменить текущий handleLogin)
 const handleLogin = async () => {
   loading.value = true
   error.value = ''
 
   try {
-    // Используем apiFetch вместо прямого $fetch
+    console.log('🔄 Logging in with:', form.value)
+
+    // ИСПРАВЛЕНО: используем apiFetch вместо прямого $fetch
     const response = await apiFetch('/auth/login', {
       method: 'POST',
-      body: form
+      body: form.value
     })
 
     console.log('Login response:', response)

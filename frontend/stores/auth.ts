@@ -55,23 +55,24 @@ if (process.client) {
   const isBorov = computed(() => user.value?.role === 'borov')
   const userRole = computed(() => user.value?.role)
 
-  // Добавляем методы для API
-  const login = async (credentials: { email: string; password: string }) => {
-    const { apiFetch } = useApi()
+  const login = async (credentials: { username: string; password: string }) => {
+  const { apiFetch } = useApi()
 
-    try {
-      const response = await apiFetch('/auth/login', {
-        method: 'POST',
-        body: credentials
-      })
+  try {
+    console.log('🔐 Auth Store Login attempt:', credentials.username)
 
-      setAuth(response.token, response.user)
-      return response
-    } catch (error) {
-      console.error('Login error:', error)
-      throw error
-    }
+    const response = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: credentials
+    })
+
+    setAuth(response.token, response.user)
+    return response
+  } catch (error) {
+    console.error('Auth Store Login error:', error)
+    throw error
   }
+}
 
   const register = async (userData: any) => {
     const { apiFetch } = useApi()
