@@ -178,6 +178,7 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const router = useRouter()
+const { apiFetch } = useApi()
 
 const form = reactive({
   username: '',
@@ -188,7 +189,7 @@ const loading = ref(false)
 const error = ref('')
 const rememberMe = ref(false)
 const showPassword = ref(false)
-const showTestData = ref(false)
+
 const usernameFocused = ref(false)
 const passwordFocused = ref(false)
 
@@ -224,7 +225,7 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-   const response = await $fetch('/api/auth/login', {
+   const response = await $fetch('/auth/login', {
       method: 'POST',
       body: form
     })

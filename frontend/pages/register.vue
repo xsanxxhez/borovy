@@ -389,6 +389,7 @@ definePageMeta({
 })
 
 const router = useRouter()
+const { apiFetch } = useApi()
 
 const form = reactive({
   promo_code: '',
@@ -544,7 +545,7 @@ const handleRegister = async () => {
     loading.value = true
     error.value = ''
 
-    const response = await $fetch('/api/borov/register', {
+    const response = await $fetch('/borov/register', {
       method: 'POST',
       body: {
         promo_code: form.promo_code,
