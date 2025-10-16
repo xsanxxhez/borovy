@@ -545,7 +545,7 @@ const handleRegister = async () => {
     loading.value = true
     error.value = ''
 
-    const response = await $fetch('/borov/register', {
+    const response = await apiFetch('/auth/register', {
       method: 'POST',
       body: {
         promo_code: form.promo_code,
