@@ -418,7 +418,7 @@ const confirmPasswordFocused = ref(false)
 
 // Форматирование телефона
 const formatPhone = () => {
-  let numbers = form.phone.replace(/\D/g, '')
+ let numbers = form.phone.replace(/\D/g, '')
 
   if (numbers.length > 0) {
     if (numbers.startsWith('7') || numbers.startsWith('8')) {
@@ -524,7 +524,7 @@ const passwordMatchText = computed(() => {
 })
 
 const handleRegister = async () => {
-  // Дополнительная вадидация
+  // Дополнительная валидация
   const age = calculateAge()
   if (age < 18) {
     error.value = 'Регистрация доступна только с 18 лет'
@@ -545,30 +545,46 @@ const handleRegister = async () => {
     loading.value = true
     error.value = ''
 
+    // Очищаем телефон от форматирования
+    const cleanPhone = form.phone.replace(/\D/g, '');
+
+    console.log('🔄 Registration attempt:', {
+      username: form.email,
+      email: form.email,
+      name: form.full_name,
+      phone: cleanPhone,
+      promo_code: form.promo_code
+    })
+
+    // ИСПРАВЛЕНО: правильные поля для бэкенда
     const response = await apiFetch('/auth/register', {
       method: 'POST',
       body: {
-        promo_code: form.promo_code,
-        full_name: form.full_name,
+        username: form.email,        // ← используем email как username
         email: form.email,
-        phone: form.phone,
-        birth_date: form.birth_date,
-        password: form.password
+        password: form.password,
+        promo_code: form.promo_code,
+        name: form.full_name,        // ← не full_name
+        phone: cleanPhone            // ← очищенный телефон
+        // birth_date убрали - его нет в бэкенде
       }
     })
 
-    message.value = 'Вы будете перенаправлены на страницу входа через 3 секунды.'
+    console.log('✅ Registration successful:', response)
+
+    message.value = 'Регистрация успешна! Вы будете автоматически вошли в систему.'
 
     // Анимация успеха
     document.querySelector('.auth-card')?.classList.add('success-animation')
 
+    // Автоматический вход после регистрации
     setTimeout(() => {
-      router.push('/login')
-    }, 3000)
+      router.push('/borov')
+    }, 2000)
 
   } catch (err: any) {
-    console.error('Registration error:', err)
-    error.value = err.data?.error || 'Ошибка регистрации. Проверьте введенные данные.'
+    console.error('❌ Registration error:', err)
+    error.value = err.data?.error || err.message || 'Ошибка регистрации. Проверьте введенные данные.'
 
     // Анимация ошибки
     document.querySelector('.auth-card')?.classList.add('error-shake')
@@ -578,6 +594,9 @@ const handleRegister = async () => {
   } finally {
     loading.value = false
   }
+}
+const cleanPhoneNumber = (phone) => {
+  return phone.replace(/\D/g, '');
 }
 
 // Инициализация частиц
