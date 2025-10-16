@@ -225,19 +225,29 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-    console.log('🔄 Logging in with:', form.value)
-
-    // ИСПРАВЛЕНО: используем apiFetch вместо прямого $fetch
-    const response = await apiFetch('/auth/login', {
-      method: 'POST',
-      body: form.value
+    console.log('🔄 Logging in with:', form)
+    console.log('🔍 Form values:', {
+      username: form.username,
+      password: form.password
     })
 
-    console.log('Login response:', response)
+    // Проверяем что поля заполнены
+    if (!form.username || !form.password) {
+      throw new Error('Заполните все поля')
+    }
 
-    // Добавляем проверку на существование user
+    const response = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: {
+        username: form.username,
+        password: form.password
+      }
+    })
+
+    console.log('✅ Login response:', response)
+
     if (!response.user) {
-      throw new Error('Некорректный ответ от сервера: отсутствуют данные пользователя')
+      throw new Error('Некорректный ответ от сервера')
     }
 
     console.log('User role:', response.user.role)
@@ -263,10 +273,9 @@ const handleLogin = async () => {
       }
     }, 1000)
   } catch (err: any) {
+    console.error('❌ Login error:', err)
     error.value = err.data?.error || err.message || 'Ошибка входа'
-    console.error('Login error:', err)
 
-    // Анимация ошибки
     document.querySelector('.auth-card')?.classList.add('error-shake')
     setTimeout(() => {
       document.querySelector('.auth-card')?.classList.remove('error-shake')
@@ -275,7 +284,6 @@ const handleLogin = async () => {
     loading.value = false
   }
 }
-
 // Инициализация частиц
 onMounted(() => {
   // Анимация при загрузке
